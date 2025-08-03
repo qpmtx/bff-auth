@@ -94,8 +94,8 @@ describe('Authentication E2E', () => {
     await app.init();
   });
 
-  afterEach(async () => {
-    await app.close();
+  afterEach(() => {
+    process.exit(1);
   });
 
   describe('Public endpoints', () => {
@@ -233,7 +233,7 @@ describe('Authentication E2E', () => {
     it('should deny access with expired token', async () => {
       const expiredToken = jwtService.sign(
         { sub: 'user-123', roles: ['user'] },
-        { expiresIn: '-1h' },
+        { expiresIn: '-1h' }
       );
 
       return request(app.getHttpServer() as Parameters<typeof request>[0])
