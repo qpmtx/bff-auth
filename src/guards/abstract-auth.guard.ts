@@ -1,6 +1,9 @@
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
-import { Injectable } from '@nestjs/common';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { Observable } from 'rxjs';
 import type {
   GenericGuardOptions,
@@ -180,10 +183,10 @@ export abstract class AbstractAuthGuard<
     const expandedRoles = this.expandRoles(userRoles);
 
     if (options.requireAll) {
-      return options.roles.every((role) => expandedRoles.includes(role));
+      return options.roles.every(role => expandedRoles.includes(role));
     }
 
-    return options.roles.some((role) => expandedRoles.includes(role));
+    return options.roles.some(role => expandedRoles.includes(role));
   }
 
   /**
@@ -200,15 +203,15 @@ export abstract class AbstractAuthGuard<
       return true;
     }
 
-    const userPermissions = user.permissions || [];
+    const userPermissions = user.permissions ?? [];
 
     if (options.requireAll) {
-      return options.permissions.every((permission) =>
+      return options.permissions.every(permission =>
         userPermissions.includes(permission),
       );
     }
 
-    return options.permissions.some((permission) =>
+    return options.permissions.some(permission =>
       userPermissions.includes(permission),
     );
   }
@@ -233,9 +236,9 @@ export abstract class AbstractAuthGuard<
    * @returns Promise resolving to true if validation passes
    */
   protected customValidation(
-    _user: TUser, // eslint-disable-line @typescript-eslint/no-unused-vars
-    _request: TRequest, // eslint-disable-line @typescript-eslint/no-unused-vars
-    _context: ExecutionContext, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _user: TUser,
+    _request: TRequest,
+    _context: ExecutionContext,
   ): Promise<boolean> {
     // Default implementation always allows
     // Override in subclasses for custom validation logic
@@ -300,8 +303,8 @@ export abstract class AbstractAuthGuard<
    * @param message - Failure message
    */
   protected onAuthenticationFailure(
-    _context: ExecutionContext, // eslint-disable-line @typescript-eslint/no-unused-vars
-    _message: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _context: ExecutionContext,
+    _message: string,
   ): void {
     // Default implementation does nothing
     // Override in subclasses for logging, monitoring, etc.
@@ -314,8 +317,8 @@ export abstract class AbstractAuthGuard<
    * @param message - Failure message
    */
   protected onAuthorizationFailure(
-    _context: ExecutionContext, // eslint-disable-line @typescript-eslint/no-unused-vars
-    _message: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _context: ExecutionContext,
+    _message: string,
   ): void {
     // Default implementation does nothing
     // Override in subclasses for logging, monitoring, etc.
@@ -327,10 +330,7 @@ export abstract class AbstractAuthGuard<
    * @param context - Execution context
    * @param error - Error that occurred
    */
-  protected onError(
-    _context: ExecutionContext, // eslint-disable-line @typescript-eslint/no-unused-vars
-    _error: unknown, // eslint-disable-line @typescript-eslint/no-unused-vars
-  ): void {
+  protected onError(_context: ExecutionContext, _error: unknown): void {
     // Default implementation does nothing
     // Override in subclasses for logging, monitoring, etc.
   }

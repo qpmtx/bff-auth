@@ -1,10 +1,10 @@
-import {
+import type {
   InjectionToken,
   ModuleMetadata,
   OptionalFactoryDependency,
   Type,
 } from '@nestjs/common';
-import { Algorithm } from 'jsonwebtoken';
+import type { Algorithm } from 'jsonwebtoken';
 
 /**
  * JWT configuration options for the authentication module

@@ -69,7 +69,7 @@ export abstract class AbstractAuthService<
    * @returns True if user has any of the roles
    */
   hasAnyRole(user: TUser, roles: string[]): boolean {
-    return roles.some((role) => this.hasRole(user, role));
+    return roles.some(role => this.hasRole(user, role));
   }
 
   /**
@@ -79,7 +79,7 @@ export abstract class AbstractAuthService<
    * @returns True if user has all of the roles
    */
   hasAllRoles(user: TUser, roles: string[]): boolean {
-    return roles.every((role) => this.hasRole(user, role));
+    return roles.every(role => this.hasRole(user, role));
   }
 
   /**
@@ -99,9 +99,7 @@ export abstract class AbstractAuthService<
    * @returns True if user has any of the permissions
    */
   hasAnyPermission(user: TUser, permissions: string[]): boolean {
-    return permissions.some((permission) =>
-      this.hasPermission(user, permission),
-    );
+    return permissions.some(permission => this.hasPermission(user, permission));
   }
 
   /**
@@ -111,7 +109,7 @@ export abstract class AbstractAuthService<
    * @returns True if user has all of the permissions
    */
   hasAllPermissions(user: TUser, permissions: string[]): boolean {
-    return permissions.every((permission) =>
+    return permissions.every(permission =>
       this.hasPermission(user, permission),
     );
   }
@@ -134,7 +132,7 @@ export abstract class AbstractAuthService<
 
     for (const role of userRoles) {
       const inheritedRoles = roleHierarchy[role] || [];
-      inheritedRoles.forEach((inherited) => expandedRoles.add(inherited));
+      inheritedRoles.forEach(inherited => expandedRoles.add(inherited));
     }
 
     return Array.from(expandedRoles);
@@ -230,10 +228,10 @@ export abstract class AbstractAuthService<
    */
   sanitizeUser(
     user: TUser,
-    fieldsToExclude: (keyof TUser)[] = [],
+    fieldsToExclude: Array<keyof TUser> = [],
   ): Partial<TUser> {
     const sanitized = { ...user };
-    fieldsToExclude.forEach((field) => delete sanitized[field]);
+    fieldsToExclude.forEach(field => delete sanitized[field]);
     return sanitized;
   }
 
@@ -263,7 +261,7 @@ export abstract class AbstractAuthService<
    * @param error - Validation error
    * @param context - Optional context information
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   protected onValidationFailure(_error: Error, _context?: string): void {
     // Default implementation does nothing
     // Subclasses can override for logging, monitoring, etc.

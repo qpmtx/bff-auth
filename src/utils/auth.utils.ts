@@ -23,7 +23,7 @@ export const hasAnyRole = <TUser extends GenericUser>(
   user: TUser,
   roles: string[],
 ): boolean => {
-  return roles.some((role) => hasRole(user, role));
+  return roles.some(role => hasRole(user, role));
 };
 
 /**
@@ -36,7 +36,7 @@ export const hasAllRoles = <TUser extends GenericUser>(
   user: TUser,
   roles: string[],
 ): boolean => {
-  return roles.every((role) => hasRole(user, role));
+  return roles.every(role => hasRole(user, role));
 };
 
 /**
@@ -62,7 +62,7 @@ export const hasAnyPermission = <TUser extends GenericUser>(
   user: TUser,
   permissions: string[],
 ): boolean => {
-  return permissions.some((permission) => hasPermission(user, permission));
+  return permissions.some(permission => hasPermission(user, permission));
 };
 
 /**
@@ -75,7 +75,7 @@ export const hasAllPermissions = <TUser extends GenericUser>(
   user: TUser,
   permissions: string[],
 ): boolean => {
-  return permissions.every((permission) => hasPermission(user, permission));
+  return permissions.every(permission => hasPermission(user, permission));
 };
 
 /**
@@ -96,7 +96,7 @@ export const expandRoles = (
 
   for (const role of userRoles) {
     const inheritedRoles = roleHierarchy[role] || [];
-    inheritedRoles.forEach((inherited) => expandedRoles.add(inherited));
+    inheritedRoles.forEach(inherited => expandedRoles.add(inherited));
   }
 
   return Array.from(expandedRoles);
@@ -121,9 +121,9 @@ export const getUserDisplayName = <TUser extends GenericUser>(
  */
 export const sanitizeUser = <TUser extends GenericUser>(
   user: TUser,
-  fieldsToExclude: (keyof TUser)[] = [],
+  fieldsToExclude: Array<keyof TUser> = [],
 ): Partial<TUser> => {
   const sanitized = { ...user };
-  fieldsToExclude.forEach((field) => delete sanitized[field]);
+  fieldsToExclude.forEach(field => delete sanitized[field]);
   return sanitized;
 };
