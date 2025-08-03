@@ -1,5 +1,5 @@
-import { CanActivate, ExecutionContext } from '@nestjs/common';
-import { AuthGuardOptions } from '../types/auth.types';
+import type { CanActivate, ExecutionContext } from '@nestjs/common';
+import type { AuthGuardOptions } from '../types/auth.types';
 
 export interface IAuthGuard extends CanActivate {
   canActivate(context: ExecutionContext): boolean | Promise<boolean>;

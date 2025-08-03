@@ -97,7 +97,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: ""
           registry-url: https://${{ env.REGISTRY_URL }}
-          scope: "@qpmatrixatrix"
+          scope: "@qpmtx"
 
       - name: "📥 Install dependencies"
         run: pnpm install --no-frozen-lockfile
@@ -109,8 +109,8 @@ jobs:
 
       - name: "🔧 Configure Git"
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name  "GitHub Action"
+          git config --local user.email "qpmtx@github.com"
+          git config --local user.name  "QPMTX Action"
 
       - name: "📈 Get current version"
         id: current-version
@@ -131,7 +131,7 @@ jobs:
           const fs = require('fs');
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
           pkg.publishConfig = {
-            '@qpmatrix:registry': 'https://npm.pkg.github.com',
+            '@qpmtx:registry': 'https://npm.pkg.github.com',
             registry:        'https://npm.pkg.github.com'
           };
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
@@ -167,7 +167,7 @@ jobs:
         id: create-tag
         run: |
           NEW_VERSION="${{ steps.bump-version.outputs.new }}"
-          TAG="qpmatrix-bff-infra-v${NEW_VERSION}"
+          TAG="qpmtx-bff-auth-v${NEW_VERSION}"
           git tag -a "$TAG" -m "Release $TAG"
           echo "tag-name=$TAG" >> "$GITHUB_OUTPUT"
 
@@ -178,7 +178,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >
-          echo "@qpmatrix:registry=https://npm.pkg.github.com" > .npmrc &&
+          echo "@qpmtx:registry=https://npm.pkg.github.com" > .npmrc &&
           echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc &&
           npm publish --access restricted
 
