@@ -5,22 +5,28 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  // Ignores (was `ignorePatterns`)
+  // Ignore things that shouldn’t be type-checked
   {
     ignores: [
-      '.eslintrc.js',
       'dist/**',
       'node_modules/**',
-      'eslint.config.mjs',
+      'coverage/**',
+      // config files that often cause “file does not match your project config”
+      'eslint.config.*',
+      'jest.config.*',
+      'vitest.config.*',
+      'vite.config.*',
+      'rollup.config.*',
+      'tsup.config.*',
     ],
   },
 
-  // Base configs (was `extends`)
+  // Base + TS type-checked presets
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,
 
-  // Language / parser options (was `parserOptions`, `env`)
+  // Language / parser options
   {
     languageOptions: {
       globals: {
@@ -29,17 +35,17 @@ export default tseslint.config(
       },
       sourceType: 'module',
       parserOptions: {
+        // ✅ Use projectService; remove `project` and `tsconfigRootDir`
         projectService: true,
-        tsconfigRootDir: import.meta.dirname,
         ecmaVersion: 2022,
       },
     },
   },
 
-  // Rules
+  // Your rules
   {
     rules: {
-      // TypeScript specific
+      // TypeScript
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
@@ -67,7 +73,7 @@ export default tseslint.config(
         'constructor',
       ],
 
-      // General JavaScript rules
+      // JS
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'error',
       'no-var': 'error',
@@ -80,7 +86,7 @@ export default tseslint.config(
         { enforceForRenamedProperties: false },
       ],
 
-      // Import sorting
+      // Imports (built-in sorter)
       'sort-imports': [
         'error',
         {
@@ -100,9 +106,9 @@ export default tseslint.config(
     },
   },
 
-  // Overrides for tests (was `overrides`)
+  // Tests: relax noisy rules (supertest/Jest often trip these)
   {
-    files: ['**/*.spec.ts', '**/*.e2e-spec.ts', '**/*.test.ts'],
+    files: ['**/*.spec.ts', '**/*.e2e-spec.ts', '**/*.test.ts', 'test/**'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
@@ -111,8 +117,15 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/require-await': 'off',
+      // ➕ these two are the usual test offenders:
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': [
+        'warn',
+        { checksVoidReturn: false },
+      ],
       'max-lines-per-function': 'off',
       complexity: 'off',
     },
-  }
+  },
 );

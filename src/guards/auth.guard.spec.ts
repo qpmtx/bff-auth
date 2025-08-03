@@ -1,14 +1,12 @@
-import {
-  ExecutionContext,
-  ForbiddenException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import type { ExecutionContext } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import { AUTH_MODULE_CONFIG } from '../constants/tokens';
 import { PUBLIC_KEY } from '../decorators/metadata.constants';
-import { AuthModuleConfig } from '../interfaces';
-import { AUTH_MODULE_CONFIG } from '../modules/auth.module';
-import { AuthGuardOptions, AuthUser } from '../types';
+import type { AuthModuleConfig } from '../interfaces';
+import type { AuthGuardOptions, AuthUser } from '../types';
 import { AuthGuard } from './auth.guard';
 
 describe('AuthGuard', () => {
@@ -74,7 +72,7 @@ describe('AuthGuard', () => {
       const result = await guard.canActivate(context);
 
       expect(result).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(reflector.getAllAndOverride).toHaveBeenCalledWith(PUBLIC_KEY, [
         context.getHandler(),
         context.getClass(),

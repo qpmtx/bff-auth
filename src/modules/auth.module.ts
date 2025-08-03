@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { authConfig } from '../config/auth.config';
+import { AUTH_MODULE_CONFIG } from '../constants';
 import { AuthGuard } from '../guards';
 import {
   AuthConfigFactory,
@@ -11,75 +12,78 @@ import {
 } from '../interfaces';
 import { JwtStrategy } from '../strategies';
 
-/** Configuration token for the auth module */
-export const AUTH_MODULE_CONFIG = 'AUTH_MODULE_CONFIG';
-
-/**
- * Global authentication module for NestJS applications
- * Provides JWT-based authentication with role and permission support
- */
 @Global()
 @Module({})
-export class AuthModule {
-  /**
-   * Configures the auth module with synchronous configuration
-   * @param config - Authentication module configuration
-   * @returns DynamicModule - Configured module
-   */
+export class QPMTXAuthModule {
   static forRoot(config: AuthModuleConfig): DynamicModule {
     const configProvider: Provider = {
       provide: AUTH_MODULE_CONFIG,
       useValue: config,
     };
 
+    // Build JwtStrategy with the injected config (no unresolved deps)
+    const jwtStrategyProvider: Provider = {
+      provide: JwtStrategy,
+      useFactory: (cfg: AuthModuleConfig) => new JwtStrategy(cfg),
+      inject: [AUTH_MODULE_CONFIG],
+    };
+
     return {
-      module: AuthModule,
+      module: QPMTXAuthModule,
       imports: [
         ConfigModule.forFeature(authConfig),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.register({
           secret: config.jwt?.secret,
-          signOptions: config.jwt?.signOptions || {},
+          signOptions: config.jwt?.signOptions ?? {},
         }),
       ],
-      providers: [configProvider, JwtStrategy, AuthGuard],
-      exports: [AUTH_MODULE_CONFIG, JwtModule, PassportModule, AuthGuard],
+      providers: [configProvider, jwtStrategyProvider, AuthGuard],
+      exports: [
+        AUTH_MODULE_CONFIG,
+        JwtModule,
+        PassportModule,
+        AuthGuard,
+        JwtStrategy,
+      ],
     };
   }
 
-  /**
-   * Configures the auth module with asynchronous configuration
-   * @param options - Async configuration options
-   * @returns DynamicModule - Configured module
-   */
   static forRootAsync(options: AuthModuleAsyncConfig): DynamicModule {
     const asyncProviders = this.createAsyncProviders(options);
 
+    const jwtStrategyProvider: Provider = {
+      provide: JwtStrategy,
+      useFactory: (cfg: AuthModuleConfig) => new JwtStrategy(cfg),
+      inject: [AUTH_MODULE_CONFIG],
+    };
+
     return {
-      module: AuthModule,
+      module: QPMTXAuthModule,
       imports: [
         ConfigModule.forFeature(authConfig),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
-          useFactory: (config: AuthModuleConfig) => ({
-            secret: config.jwt?.secret,
-            signOptions: config.jwt?.signOptions || {},
+          useFactory: (cfg: AuthModuleConfig) => ({
+            secret: cfg.jwt?.secret,
+            signOptions: cfg.jwt?.signOptions ?? {},
           }),
           inject: [AUTH_MODULE_CONFIG],
+          ...(options.imports ? { imports: options.imports } : {}),
         }),
-        ...(options.imports || []),
+        ...(options.imports ?? []),
       ],
-      providers: [...asyncProviders, JwtStrategy, AuthGuard],
-      exports: [AUTH_MODULE_CONFIG, JwtModule, PassportModule, AuthGuard],
+      providers: [...asyncProviders, jwtStrategyProvider, AuthGuard],
+      exports: [
+        AUTH_MODULE_CONFIG,
+        JwtModule,
+        PassportModule,
+        AuthGuard,
+        JwtStrategy,
+      ],
     };
   }
 
-  /**
-   * Creates providers for async configuration
-   * @param options - Async configuration options
-   * @returns Provider[] - Array of providers
-   * @throws {Error} When invalid configuration is provided
-   */
   private static createAsyncProviders(
     options: AuthModuleAsyncConfig,
   ): Provider[] {
@@ -88,7 +92,7 @@ export class AuthModule {
         {
           provide: AUTH_MODULE_CONFIG,
           useFactory: options.useFactory,
-          inject: options.inject || [],
+          inject: options.inject ?? [],
         },
       ];
     }

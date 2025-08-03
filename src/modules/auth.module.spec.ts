@@ -1,5 +1,6 @@
-import { AuthConfigFactory, AuthModuleConfig } from '../interfaces';
-import { AUTH_MODULE_CONFIG, AuthModule } from './auth.module';
+import { AUTH_MODULE_CONFIG } from '../constants/tokens';
+import type { AuthConfigFactory, AuthModuleConfig } from '../interfaces';
+import { QPMTXAuthModule } from './auth.module';
 
 class MockAuthConfigFactory implements AuthConfigFactory {
   createAuthConfig(): AuthModuleConfig {
@@ -29,10 +30,10 @@ describe('AuthModule', () => {
 
   describe('forRoot', () => {
     it('should create dynamic module with correct configuration', () => {
-      const dynamicModule = AuthModule.forRoot(mockConfig);
+      const dynamicModule = QPMTXAuthModule.forRoot(mockConfig);
 
       expect(dynamicModule).toBeDefined();
-      expect(dynamicModule.module).toBe(AuthModule);
+      expect(dynamicModule.module).toBe(QPMTXAuthModule);
       expect(dynamicModule.providers).toBeDefined();
       expect(dynamicModule.exports).toBeDefined();
       expect(dynamicModule.imports).toBeDefined();
@@ -51,36 +52,36 @@ describe('AuthModule', () => {
 
   describe('forRootAsync', () => {
     it('should create dynamic module with useFactory', () => {
-      const dynamicModule = AuthModule.forRootAsync({
+      const dynamicModule = QPMTXAuthModule.forRootAsync({
         useFactory: () => mockConfig,
       });
 
       expect(dynamicModule).toBeDefined();
-      expect(dynamicModule.module).toBe(AuthModule);
+      expect(dynamicModule.module).toBe(QPMTXAuthModule);
       expect(dynamicModule.providers).toBeDefined();
       expect(dynamicModule.exports).toBeDefined();
       expect(dynamicModule.imports).toBeDefined();
     });
 
     it('should create dynamic module with useClass', () => {
-      const dynamicModule = AuthModule.forRootAsync({
+      const dynamicModule = QPMTXAuthModule.forRootAsync({
         useClass: MockAuthConfigFactory,
       });
 
       expect(dynamicModule).toBeDefined();
-      expect(dynamicModule.module).toBe(AuthModule);
+      expect(dynamicModule.module).toBe(QPMTXAuthModule);
       expect(dynamicModule.providers).toBeDefined();
       expect(dynamicModule.exports).toBeDefined();
       expect(dynamicModule.imports).toBeDefined();
     });
 
     it('should create dynamic module with useExisting', () => {
-      const dynamicModule = AuthModule.forRootAsync({
+      const dynamicModule = QPMTXAuthModule.forRootAsync({
         useExisting: MockAuthConfigFactory,
       });
 
       expect(dynamicModule).toBeDefined();
-      expect(dynamicModule.module).toBe(AuthModule);
+      expect(dynamicModule.module).toBe(QPMTXAuthModule);
       expect(dynamicModule.providers).toBeDefined();
       expect(dynamicModule.exports).toBeDefined();
       expect(dynamicModule.imports).toBeDefined();
@@ -88,7 +89,7 @@ describe('AuthModule', () => {
 
     it('should throw error with invalid configuration', () => {
       expect(() => {
-        AuthModule.forRootAsync({});
+        QPMTXAuthModule.forRootAsync({});
       }).toThrow('Invalid AuthModule async configuration');
     });
   });
@@ -101,7 +102,7 @@ describe('AuthModule', () => {
       };
 
       const providers = (
-        AuthModule as unknown as {
+        QPMTXAuthModule as unknown as {
           createAsyncProviders: (options: unknown) => unknown[];
         }
       ).createAsyncProviders(options);
@@ -124,7 +125,7 @@ describe('AuthModule', () => {
       };
 
       const providers = (
-        AuthModule as unknown as {
+        QPMTXAuthModule as unknown as {
           createAsyncProviders: (options: unknown) => unknown[];
         }
       ).createAsyncProviders(options);
@@ -144,7 +145,7 @@ describe('AuthModule', () => {
       };
 
       const providers = (
-        AuthModule as unknown as {
+        QPMTXAuthModule as unknown as {
           createAsyncProviders: (options: unknown) => unknown[];
         }
       ).createAsyncProviders(options);

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard as PassportAuthGuard } from '@nestjs/passport';
+import { AUTH_MODULE_CONFIG } from '../constants/tokens';
 import {
   AUTH_OPTIONS_KEY,
   PERMISSIONS_KEY,
@@ -14,7 +15,6 @@ import {
   ROLES_KEY,
 } from '../decorators/metadata.constants';
 import { AuthModuleConfig, IAuthGuard, IGuardConfig } from '../interfaces';
-import { AUTH_MODULE_CONFIG } from '../modules/auth.module';
 import { AuthGuardOptions, AuthUser, BaseRequest } from '../types';
 /**
  * Authentication guard that extends Passport JWT guard
@@ -118,7 +118,7 @@ export class AuthGuard
       throw error;
     }
     throw new UnauthorizedException(
-      this.config.unauthorizedMessage || 'Unauthorized',
+      this.config.unauthorizedMessage ?? 'Unauthorized',
     );
   }
 
@@ -129,9 +129,9 @@ export class AuthGuard
    * @returns boolean - Always throws exception
    * @throws {ForbiddenException}
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   handleForbidden(_context: ExecutionContext, _error?: unknown): boolean {
-    throw new ForbiddenException(this.config.forbiddenMessage || 'Forbidden');
+    throw new ForbiddenException(this.config.forbiddenMessage ?? 'Forbidden');
   }
 
   /**
@@ -173,10 +173,10 @@ export class AuthGuard
     const expandedRoles = this.expandRoles(userRoles);
 
     if (options.requireAll) {
-      return options.roles.every((role) => expandedRoles.includes(role));
+      return options.roles.every(role => expandedRoles.includes(role));
     }
 
-    return options.roles.some((role) => expandedRoles.includes(role));
+    return options.roles.some(role => expandedRoles.includes(role));
   }
 
   /**
@@ -193,15 +193,15 @@ export class AuthGuard
       return true;
     }
 
-    const userPermissions = user.permissions || [];
+    const userPermissions = user.permissions ?? [];
 
     if (options.requireAll) {
-      return options.permissions.every((permission) =>
+      return options.permissions.every(permission =>
         userPermissions.includes(permission),
       );
     }
 
-    return options.permissions.some((permission) =>
+    return options.permissions.some(permission =>
       userPermissions.includes(permission),
     );
   }
@@ -220,7 +220,7 @@ export class AuthGuard
 
     for (const role of userRoles) {
       const inheritedRoles = this.config.roleHierarchy[role] || [];
-      inheritedRoles.forEach((inherited) => expandedRoles.add(inherited));
+      inheritedRoles.forEach(inherited => expandedRoles.add(inherited));
     }
 
     return Array.from(expandedRoles);

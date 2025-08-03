@@ -1,8 +1,9 @@
 import { UnauthorizedException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuthModuleConfig } from '../interfaces';
-import { AUTH_MODULE_CONFIG } from '../modules/auth.module';
-import { JwtPayload } from '../types';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import { AUTH_MODULE_CONFIG } from '../constants/tokens';
+import type { AuthModuleConfig } from '../interfaces';
+import type { JwtPayload } from '../types';
 import { JwtStrategy } from './jwt.strategy';
 
 describe('JwtStrategy', () => {
