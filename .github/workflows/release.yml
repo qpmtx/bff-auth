@@ -6,13 +6,12 @@ on:
     paths-ignore:
       - CHANGELOG.md
 
+# Minimal global permissions; job-level permissions are set where needed
 permissions:
   contents: write
-  packages: write
   pull-requests: read
 
 env:
-  REGISTRY_URL: npm.pkg.github.com
   NODE_VERSION: "20"
 
 jobs:
@@ -75,10 +74,15 @@ jobs:
           echo "type=$VERSION_TYPE" >> "$GITHUB_OUTPUT"
 
   release:
-    name: "🚀 Release & Publish"
+    name: "🚀 Release & Publish to npm"
     runs-on: ubuntu-latest
     needs: check-pr-merge
     if: needs.check-pr-merge.outputs.is-pr-merge == 'true'
+
+    # Required for OIDC (Trusted Publishing) + creating GitHub releases
+    permissions:
+      contents: write
+      id-token: write
 
     steps:
       - name: "🔍 Checkout code"
@@ -95,9 +99,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: ""
-          registry-url: https://${{ env.REGISTRY_URL }}
-          scope: "@qpmtx"
+          registry-url: https://registry.npmjs.org
+
+      # npm 11.5.1+ is required for trusted publishing & automatic provenance
+      - name: "⬆️ Ensure recent npm"
+        run: npm install -g npm@latest
 
       - name: "📥 Install dependencies"
         run: pnpm install --no-frozen-lockfile
@@ -125,19 +131,17 @@ jobs:
           NEW_VERSION=$(npm version "$VERSION_TYPE" --no-git-tag-version)
           echo "new=${NEW_VERSION#v}" >> "$GITHUB_OUTPUT"
 
-      - name: "📝 Update package.json registry"
+      # Make sure the first publish of a scoped package is public
+      - name: "📝 Ensure public access for scoped package"
         run: |
           node <<'NODE'
           const fs = require('fs');
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          pkg.publishConfig = {
-            '@qpmtx:registry': 'https://npm.pkg.github.com',
-            registry:        'https://npm.pkg.github.com'
-          };
+          pkg.publishConfig = { ...(pkg.publishConfig ?? {}), access: 'public' };
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
           NODE
 
-      - name: "🏗️ Build package"
+      - name: "🏗️ Build package (post-bump)"
         run: pnpm build
 
       - name: "📄 Generate changelog entry"
@@ -174,13 +178,10 @@ jobs:
       - name: "📤 Push changes & tags"
         run: git push --follow-tags origin main
 
-      - name: "📦 Publish to GitHub Packages"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >
-          echo "@qpmtx:registry=https://npm.pkg.github.com" > .npmrc &&
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc &&
-          npm publish --access restricted
+      # 👉 Trusted Publishing: no NPM_TOKEN required; OIDC is used automatically.
+      # First scoped publish must be public; subsequent runs are fine too.
+      - name: "📦 Publish to npm (trusted publishing)"
+        run: npm publish --access public
 
       - name: "📋 Create GitHub Release"
         uses: actions/create-release@v1
@@ -197,4 +198,4 @@ jobs:
 
       - name: "📊 Summary"
         run: |
-          echo "### ✅ Released v${{ steps.bump-version.outputs.new }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "### ✅ Released v${{ steps.bump-version.outputs.new }} to npm" >> "$GITHUB_STEP_SUMMARY"
