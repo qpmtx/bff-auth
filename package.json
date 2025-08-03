@@ -1,6 +1,6 @@
 {
   "name": "@qpmtx/bff-auth",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Type-safe authentication library for NestJS with configurable guards and role-based access control",
   "author": {
     "name": "QPMatrix",
