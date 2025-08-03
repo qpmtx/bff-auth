@@ -1,99 +1,344 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# @qpmtx/bff-auth
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A comprehensive, type-safe authentication library for NestJS applications with configurable guards, role-based access control, and flexible configuration options.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- 🔒 **Type-safe authentication** with full TypeScript support
+- 🛡️ **Configurable guards** that can be easily overridden
+- 👥 **Role-based access control (RBAC)** with hierarchical roles
+- 🔑 **Permission-based authorization**
+- ⚙️ **External configuration support**
+- 📦 **Peer dependencies** for optimal bundle size
+- 🎯 **Decorator-based authorization**
+- 🔄 **Async configuration support**
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Installation
 
 ```bash
-$ pnpm install
+npm install @qpmtx/bff-auth
+# or
+yarn add @qpmtx/bff-auth
 ```
 
-## Compile and run the project
+## Peer Dependencies
+
+Make sure to install the required peer dependencies:
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+npm install @nestjs/common @nestjs/core @nestjs/jwt @nestjs/passport passport passport-jwt reflect-metadata rxjs
 ```
 
-## Run tests
+## Quick Start
 
-```bash
-# unit tests
-$ pnpm run test
+### 1. Basic Configuration
 
-# e2e tests
-$ pnpm run test:e2e
+```typescript
+import { Module } from '@nestjs/common';
+import { AuthModule } from '@qpmtx/bff-auth';
 
-# test coverage
-$ pnpm run test:cov
+@Module({
+  imports: [
+    AuthModule.forRoot({
+      jwt: {
+        secret: 'your-secret-key',
+        signOptions: { expiresIn: '1h' },
+      },
+      globalGuard: true,
+      defaultRoles: ['user'],
+    }),
+  ],
+})
+export class AppModule {}
 ```
 
-## Deployment
+### 2. Async Configuration
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+```typescript
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from '@qpmtx/bff-auth';
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+@Module({
+  imports: [
+    ConfigModule.forRoot(),
+    AuthModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        jwt: {
+          secret: configService.get('JWT_SECRET'),
+          signOptions: {
+            expiresIn: configService.get('JWT_EXPIRES_IN', '1h'),
+          },
+        },
+        globalGuard: configService.get('AUTH_GLOBAL_GUARD', false),
+        defaultRoles: ['user'],
+      }),
+      inject: [ConfigService],
+    }),
+  ],
+})
+export class AppModule {}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Usage
 
-## Resources
+### Using Decorators
 
-Check out a few resources that may come in handy when working with NestJS:
+```typescript
+import { Controller, Get } from '@nestjs/common';
+import { Roles, Permissions, User, Public } from '@qpmtx/bff-auth';
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+@Controller('users')
+export class UsersController {
+  @Get('profile')
+  @Roles('user', 'admin')
+  getProfile(@User() user: AuthUser) {
+    return user;
+  }
 
-## Support
+  @Get('admin')
+  @Roles('admin')
+  @Permissions('read:users')
+  getAdminData() {
+    return { message: 'Admin only data' };
+  }
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+  @Get('public')
+  @Public()
+  getPublicData() {
+    return { message: 'Public data' };
+  }
+}
+```
 
-## Stay in touch
+### Advanced Authorization
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```typescript
+import { AuthOptions } from '@qpmtx/bff-auth';
+
+@Controller('api')
+export class ApiController {
+  @Get('sensitive')
+  @AuthOptions({
+    roles: ['admin', 'moderator'],
+    permissions: ['read:sensitive'],
+    requireAll: true, // Requires ALL roles AND permissions
+  })
+  getSensitiveData() {
+    return { data: 'sensitive' };
+  }
+
+  @Get('flexible')
+  @AuthOptions({
+    roles: ['user'],
+    permissions: ['read:data'],
+    requireAll: false, // Requires ANY role OR permission
+  })
+  getFlexibleData() {
+    return { data: 'flexible' };
+  }
+}
+```
+
+### Role Hierarchy
+
+Configure role inheritance:
+
+```typescript
+AuthModule.forRoot({
+  jwt: { secret: 'secret' },
+  roleHierarchy: {
+    admin: ['moderator', 'user'],
+    moderator: ['user'],
+  },
+  // admin inherits moderator and user permissions
+  // moderator inherits user permissions
+})
+```
+
+### Custom User Validation
+
+```typescript
+AuthModule.forRoot({
+  jwt: { secret: 'secret' },
+  customUserValidator: async (user) => {
+    // Custom validation logic
+    return user.isActive && !user.isBlocked;
+  },
+})
+```
+
+### Custom Token Extraction
+
+```typescript
+AuthModule.forRoot({
+  jwt: { secret: 'secret' },
+  tokenExtractor: (request) => {
+    // Extract token from custom header
+    return request.headers['x-api-token'] || null;
+  },
+})
+```
+
+## API Reference
+
+### Types
+
+```typescript
+interface AuthUser {
+  id: string;
+  email?: string;
+  username?: string;
+  roles: string[];
+  permissions?: string[];
+  [key: string]: any;
+}
+
+interface AuthGuardOptions {
+  roles?: string[];
+  permissions?: string[];
+  requireAll?: boolean;
+  allowAnonymous?: boolean;
+}
+```
+
+### Decorators
+
+- `@Roles(...roles: string[])` - Require specific roles
+- `@Permissions(...permissions: string[])` - Require specific permissions
+- `@AuthOptions(options: AuthGuardOptions)` - Advanced authorization options
+- `@Public()` - Mark endpoint as public (bypass authentication)
+- `@User(field?: keyof AuthUser)` - Inject user data into route handler
+
+### Utilities
+
+```typescript
+import { AuthUtils } from '@qpmtx/bff-auth';
+
+// Check roles and permissions
+AuthUtils.hasRole(user, 'admin');
+AuthUtils.hasAnyRole(user, ['admin', 'moderator']);
+AuthUtils.hasAllRoles(user, ['user', 'verified']);
+AuthUtils.hasPermission(user, 'read:users');
+AuthUtils.hasAnyPermission(user, ['read:users', 'write:users']);
+AuthUtils.hasAllPermissions(user, ['read:users', 'write:users']);
+
+// Role expansion with hierarchy
+AuthUtils.expandRoles(userRoles, roleHierarchy);
+
+// User utilities
+AuthUtils.getUserDisplayName(user);
+AuthUtils.sanitizeUser(user, ['password', 'secret']);
+```
+
+## Configuration Options
+
+### AuthModuleConfig
+
+```typescript
+interface AuthModuleConfig {
+  jwt?: JwtConfig;
+  globalGuard?: boolean;
+  defaultRoles?: string[];
+  roleHierarchy?: Record<string, string[]>;
+  customUserValidator?: (user: any) => Promise<boolean> | boolean;
+  tokenExtractor?: (request: any) => string | null;
+  unauthorizedMessage?: string;
+  forbiddenMessage?: string;
+}
+```
+
+### JWT Configuration
+
+```typescript
+interface JwtConfig {
+  secret?: string;
+  signOptions?: {
+    expiresIn?: string | number;
+    issuer?: string;
+    audience?: string;
+    algorithm?: string;
+  };
+  verifyOptions?: {
+    issuer?: string;
+    audience?: string;
+    algorithms?: string[];
+    clockTolerance?: number;
+    ignoreExpiration?: boolean;
+    ignoreNotBefore?: boolean;
+  };
+}
+```
+
+## Extending the Library
+
+### Custom Guard
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@qpmtx/bff-auth';
+
+@Injectable()
+export class CustomAuthGuard extends AuthGuard {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Custom logic before authentication
+    const result = await super.canActivate(context);
+    
+    if (result) {
+      // Additional checks after successful authentication
+      const request = context.switchToHttp().getRequest();
+      return this.customValidation(request.user);
+    }
+    
+    return false;
+  }
+
+  private customValidation(user: AuthUser): boolean {
+    // Your custom validation logic
+    return true;
+  }
+}
+```
+
+### Custom Configuration Factory
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { AuthConfigFactory, AuthModuleConfig } from '@qpmtx/bff-auth';
+
+@Injectable()
+export class CustomAuthConfigService implements AuthConfigFactory {
+  createAuthConfig(): AuthModuleConfig {
+    return {
+      jwt: {
+        secret: process.env.JWT_SECRET,
+        signOptions: { expiresIn: '24h' },
+      },
+      globalGuard: true,
+      defaultRoles: ['user'],
+      customUserValidator: async (user) => {
+        // Custom validation logic
+        return user.isActive;
+      },
+    };
+  }
+}
+
+// Use in module
+AuthModule.forRootAsync({
+  useClass: CustomAuthConfigService,
+})
+```
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
-# bff-auth
+MIT
+
+## Contributing
+
+Contributions are welcome! Please read our contributing guidelines and submit pull requests to our repository.
+
+## Support
+
+For questions and support, please open an issue on our GitHub repository.
