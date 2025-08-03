@@ -109,7 +109,7 @@ jobs:
 
       - name: "🔧 Configure Git"
         run: |
-          git config --local user.email "qpmtx@github.com"
+          git config --local user.email "qpmtx@qpmatrix.com"
           git config --local user.name  "QPMTX Action"
 
       - name: "📈 Get current version"

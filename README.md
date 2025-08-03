@@ -34,11 +34,11 @@ yarn add @qpmtx/bff-auth
 
 ```typescript
 import { Module } from '@nestjs/common';
-import { AuthModule } from '@qpmtx/bff-auth';
+import { QPMTXAuthModule } from '@qpmtx/bff-auth';
 
 @Module({
   imports: [
-    AuthModule.forRoot({
+    QPMTXAuthModule.forRoot({
       jwt: {
         secret: 'your-secret-key',
         signOptions: { expiresIn: '1h' },
@@ -56,12 +56,12 @@ export class AppModule {}
 ```typescript
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthModule } from '@qpmtx/bff-auth';
+import { QPMTXAuthModule } from '@qpmtx/bff-auth';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    AuthModule.forRootAsync({
+    QPMTXAuthModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         jwt: {
@@ -145,7 +145,7 @@ export class ApiController {
 Configure role inheritance:
 
 ```typescript
-AuthModule.forRoot({
+QPMTXAuthModule.forRoot({
   jwt: { secret: 'secret' },
   roleHierarchy: {
     admin: ['moderator', 'user'],
@@ -159,7 +159,7 @@ AuthModule.forRoot({
 ### Custom User Validation
 
 ```typescript
-AuthModule.forRoot({
+QPMTXAuthModule.forRoot({
   jwt: { secret: 'secret' },
   customUserValidator: async user => {
     // Custom validation logic
@@ -171,7 +171,7 @@ AuthModule.forRoot({
 ### Custom Token Extraction
 
 ```typescript
-AuthModule.forRoot({
+QPMTXAuthModule.forRoot({
   jwt: { secret: 'secret' },
   tokenExtractor: request => {
     // Extract token from custom header
@@ -254,10 +254,10 @@ sanitizeUser(user, ['password', 'secret']);
 
 ## Configuration Options
 
-### AuthModuleConfig
+### QPMTXAuthModuleConfig
 
 ```typescript
-interface AuthModuleConfig {
+interface QPMTXAuthModuleConfig {
   jwt?: JwtConfig;
   globalGuard?: boolean;
   defaultRoles?: string[];
@@ -362,11 +362,11 @@ export class CustomAuthGuard extends AbstractAuthGuard {
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { AuthConfigFactory, AuthModuleConfig } from '@qpmtx/bff-auth';
+import { AuthConfigFactory, QPMTXAuthModuleConfig } from '@qpmtx/bff-auth';
 
 @Injectable()
 export class CustomAuthConfigService implements AuthConfigFactory {
-  createAuthConfig(): AuthModuleConfig {
+  createAuthConfig(): QPMTXAuthModuleConfig {
     return {
       jwt: {
         secret: process.env.JWT_SECRET,
@@ -383,7 +383,7 @@ export class CustomAuthConfigService implements AuthConfigFactory {
 }
 
 // Use in module
-AuthModule.forRootAsync({
+QPMTXAuthModule.forRootAsync({
   useClass: CustomAuthConfigService,
 });
 ```
