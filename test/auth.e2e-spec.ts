@@ -4,8 +4,7 @@ import { Test } from '@nestjs/testing';
 import * as jwt from 'jsonwebtoken';
 import * as request from 'supertest';
 
-// Import from local files
-import { QPMTXAuthModule } from '../../src';
+import { QPMTXAuthModule } from '../src/modules/auth.module';
 import { RolePermissionService } from './mocks/auth.mocks';
 import { TestController } from './mocks/test.controller';
 export const jwtSecret = 'test-secret-key';
