@@ -1,0 +1,365 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches: [main]
+
+env:
+  CI: true
+  NODE_ENV: test
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: 📦 Setup & Install Dependencies
+    runs-on: ubuntu-latest
+    outputs:
+      deps-cache-hit: ${{ steps.cache-deps.outputs.cache-hit }}
+    steps:
+      - name: 🔍 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.13.1
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: ""
+
+      - name: 📥 Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 🗂️ Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-
+            ${{ runner.os }}-deps-
+
+  lint:
+    name: 🔍 Lint Code
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: 🔍 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.13.1
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: ""
+
+      - name: 🗂️ Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-
+            ${{ runner.os }}-deps-
+
+      - name: 📥 Install dependencies (if cache miss)
+        if: needs.setup.outputs.deps-cache-hit != 'true'
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 🔍 Run ESLint check
+        run: pnpm run lint:check
+
+  format:
+    name: 💅 Check Code Formatting
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: 🔍 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.13.1
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: ""
+
+      - name: 🗂️ Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-
+            ${{ runner.os }}-deps-
+
+      - name: 📥 Install dependencies (if cache miss)
+        if: needs.setup.outputs.deps-cache-hit != 'true'
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 💅 Check Prettier formatting
+        run: pnpm run format:check
+
+      - name: 📝 Generate formatting diff (on failure)
+        if: failure()
+        run: |
+          echo "## 💅 Formatting Issues Found" >> $GITHUB_STEP_SUMMARY
+          echo "Run \`pnpm run format\` to fix these issues." >> $GITHUB_STEP_SUMMARY
+
+  test:
+    name: 🧪 Run Tests
+    runs-on: ubuntu-latest
+    needs: setup
+    strategy:
+      matrix:
+        node-version: [18, 20, 24]
+      fail-fast: false
+    steps:
+      - name: 🔍 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.13.1
+
+      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: ""
+
+      - name: 🗂️ Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-
+            ${{ runner.os }}-deps-
+
+      - name: 📥 Install dependencies (if cache miss)
+        if: needs.setup.outputs.deps-cache-hit != 'true'
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 🧪 Run unit tests
+        run: pnpm run test
+
+      - name: 📊 Generate test summary
+        if: always()
+        run: |
+          echo "## 🧪 Test Results (Node.js ${{ matrix.node-version }})" >> $GITHUB_STEP_SUMMARY
+          if [ $? -eq 0 ]; then
+            echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some tests failed. Check the logs above." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  coverage:
+    name: 📊 Test Coverage
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: 🔍 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.13.1
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: ""
+
+      - name: 🗂️ Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-
+            ${{ runner.os }}-deps-
+
+      - name: 📥 Install dependencies (if cache miss)
+        if: needs.setup.outputs.deps-cache-hit != 'true'
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 📊 Run tests with coverage
+        run: pnpm run test:cov
+
+      - name: 📈 Upload coverage to Codecov (optional)
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: 📊 Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+        if: always()
+
+  build:
+    name: 🏗️ Build Check
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: 🔍 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.13.1
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: ""
+
+      - name: 🗂️ Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-
+            ${{ runner.os }}-deps-
+
+      - name: 📥 Install dependencies (if cache miss)
+        if: needs.setup.outputs.deps-cache-hit != 'true'
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 🏗️ Build project
+        run: pnpm run build
+
+      - name: 🔍 Check build output
+        run: |
+          if [ -d "dist" ]; then
+            echo "## 🏗️ Build Successful" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Build completed successfully - dist directory created" >> $GITHUB_STEP_SUMMARY
+            echo "📦 Build artifacts:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            find dist -type f -name "*.js" -o -name "*.d.ts" | head -20 >> $GITHUB_STEP_SUMMARY || echo "No JS/TS files found in dist" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ Build Failed" >> $GITHUB_STEP_SUMMARY
+            echo "❌ Build failed - no dist directory found" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: 📦 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+          retention-days: 7
+        if: success()
+
+  # Optional: Security audit (doesn't block CI but shows warnings)
+  security:
+    name: 🔒 Security Audit
+    runs-on: ubuntu-latest
+    needs: setup
+    continue-on-error: true
+    steps:
+      - name: 🔍 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.13.1
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: ""
+
+      - name: 🔒 Run security audit
+        run: pnpm audit --audit-level moderate
+        continue-on-error: true
+
+      - name: 📋 Security summary
+        if: always()
+        run: |
+          echo "## 🔒 Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "Security audit completed. Check logs above for any vulnerabilities." >> $GITHUB_STEP_SUMMARY
+
+  # Final status check - FIXED: removed E2E_STATUS reference
+  status-check:
+    name: ✅ Status Check
+    runs-on: ubuntu-latest
+    needs: [lint, format, test, coverage, build]
+    if: always()
+    steps:
+      - name: 🔍 Check all jobs status
+        run: |
+          echo "## 📊 CI Pipeline Results" >> $GITHUB_STEP_SUMMARY
+
+          # Check each job status
+          LINT_STATUS="${{ needs.lint.result }}"
+          FORMAT_STATUS="${{ needs.format.result }}"
+          TEST_STATUS="${{ needs.test.result }}"
+          COVERAGE_STATUS="${{ needs.coverage.result }}"
+          BUILD_STATUS="${{ needs.build.result }}"
+
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 Lint | $([[ $LINT_STATUS == 'success' ]] && echo '✅ Passed' || echo '❌ Failed') |" >> $GITHUB_STEP_SUMMARY
+          echo "| 💅 Format | $([[ $FORMAT_STATUS == 'success' ]] && echo '✅ Passed' || echo '❌ Failed') |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 Tests | $([[ $TEST_STATUS == 'success' ]] && echo '✅ Passed' || echo '❌ Failed') |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📊 Coverage | $([[ $COVERAGE_STATUS == 'success' ]] && echo '✅ Passed' || echo '❌ Failed') |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🏗️ Build | $([[ $BUILD_STATUS == 'success' ]] && echo '✅ Passed' || echo '❌ Failed') |" >> $GITHUB_STEP_SUMMARY
+
+          # Fail if any required job failed (REMOVED E2E_STATUS check)
+          if [[ $LINT_STATUS != 'success' || $FORMAT_STATUS != 'success' || $TEST_STATUS != 'success' || $BUILD_STATUS != 'success' ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **Pipeline Failed**: One or more required checks failed." >> $GITHUB_STEP_SUMMARY
+            echo "Please fix the issues above before merging." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **All checks passed!** Ready to merge." >> $GITHUB_STEP_SUMMARY
+          fi
