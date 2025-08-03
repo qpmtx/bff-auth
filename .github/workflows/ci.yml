@@ -235,7 +235,56 @@ jobs:
           path: coverage/
           retention-days: 7
         if: always()
+  e2e:
+    name: 🧩 E2E Tests (Nest + supertest)
+    runs-on: ubuntu-latest
+    needs: setup
+    env:
+      CI: true
+      NODE_ENV: test
 
+    steps:
+      - name: 🔍 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.13.1
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 🗂️ Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-
+            ${{ runner.os }}-deps-
+          # Caching ref: :contentReference[oaicite:2]{index=2}
+
+      - name: 📥 Install dependencies (if cache miss)
+        if: needs.setup.outputs.deps-cache-hit != 'true'
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 🧪 Run E2E tests
+        run: pnpm run test:e2e
+
+      - name: 📦 Upload E2E artifacts (optional)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs
+          path: |
+            junit-e2e.xml
+            coverage-e2e/
+          if-no-files-found: ignore
   build:
     name: 🏗️ Build Check
     runs-on: ubuntu-latest
@@ -326,62 +375,7 @@ jobs:
         run: |
           echo "## 🔒 Security Audit Results" >> $GITHUB_STEP_SUMMARY
           echo "Security audit completed. Check logs above for any vulnerabilities." >> $GITHUB_STEP_SUMMARY
-  e2e:
-    name: 🧩 E2E Tests (Nest + supertest)
-    runs-on: ubuntu-latest
-    needs: setup
-    env:
-      CI: true
-      NODE_ENV: test
 
-    steps:
-      - name: 🔍 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10.13.1
-
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          # Tip: you could switch to built-in pnpm cache via setup-node if you prefer.
-          # cache: 'pnpm'   # docs recommend built-in caching for pnpm
-          # cache-dependency-path: pnpm-lock.yaml
-          # (You currently use actions/cache, which is fine.) :contentReference[oaicite:1]{index=1}
-
-      - name: 🗂️ Restore dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            ~/.pnpm-store
-          key: ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-deps-${{ hashFiles('package.json') }}-
-            ${{ runner.os }}-deps-
-          # Caching ref: :contentReference[oaicite:2]{index=2}
-
-      - name: 📥 Install dependencies (if cache miss)
-        if: needs.setup.outputs.deps-cache-hit != 'true'
-        run: pnpm install --no-frozen-lockfile
-
-      - name: 🧪 Run E2E tests
-        run: pnpm run test:e2e -- --runInBand
-        # runInBand avoids race conditions with app lifecycles; detectOpenHandles is for debugging only. :contentReference[oaicite:3]{index=3}
-
-      - name: 📦 Upload E2E artifacts (optional)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-logs
-          path: |
-            junit-e2e.xml
-            coverage-e2e/
-          if-no-files-found: ignore
-  # Final status check - FIXED: removed E2E_STATUS reference
   status-check:
     name: ✅ Status Check
     runs-on: ubuntu-latest
