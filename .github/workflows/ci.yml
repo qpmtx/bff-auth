@@ -333,8 +333,7 @@ jobs:
     env:
       CI: true
       NODE_ENV: test
-      # If your AuthModule reads from env, uncomment:
-      # JWT_SECRET: test-secret-key
+
     steps:
       - name: 🔍 Checkout code
         uses: actions/checkout@v4
