@@ -21,13 +21,12 @@ npm install @qpmtx/bff-auth
 yarn add @qpmtx/bff-auth
 ```
 
-## Peer Dependencies
+## The library includes these dependencies
 
-Make sure to install the required peer dependencies:
-
-```bash
-npm install @nestjs/common @nestjs/core @nestjs/jwt @nestjs/passport passport passport-jwt reflect-metadata rxjs
-```
+- `@nestjs/jwt` - JWT token handling
+- `@nestjs/passport` - Passport integration
+- `passport` - Authentication middleware
+- `passport-jwt` - JWT passport strategy
 
 ## Quick Start
 
@@ -154,7 +153,7 @@ AuthModule.forRoot({
   },
   // admin inherits moderator and user permissions
   // moderator inherits user permissions
-})
+});
 ```
 
 ### Custom User Validation
@@ -162,11 +161,11 @@ AuthModule.forRoot({
 ```typescript
 AuthModule.forRoot({
   jwt: { secret: 'secret' },
-  customUserValidator: async (user) => {
+  customUserValidator: async user => {
     // Custom validation logic
     return user.isActive && !user.isBlocked;
   },
-})
+});
 ```
 
 ### Custom Token Extraction
@@ -174,11 +173,11 @@ AuthModule.forRoot({
 ```typescript
 AuthModule.forRoot({
   jwt: { secret: 'secret' },
-  tokenExtractor: (request) => {
+  tokenExtractor: request => {
     // Extract token from custom header
     return request.headers['x-api-token'] || null;
   },
-})
+});
 ```
 
 ## API Reference
@@ -192,7 +191,7 @@ interface AuthUser {
   username?: string;
   roles: string[];
   permissions?: string[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface AuthGuardOptions {
@@ -200,6 +199,17 @@ interface AuthGuardOptions {
   permissions?: string[];
   requireAll?: boolean;
   allowAnonymous?: boolean;
+}
+
+interface JwtPayload {
+  sub: string;
+  email?: string;
+  username?: string;
+  roles: string[];
+  permissions?: string[];
+  iat?: number;
+  exp?: number;
+  [key: string]: unknown;
 }
 ```
 
@@ -214,22 +224,32 @@ interface AuthGuardOptions {
 ### Utilities
 
 ```typescript
-import { AuthUtils } from '@qpmtx/bff-auth';
+import {
+  hasRole,
+  hasAnyRole,
+  hasAllRoles,
+  hasPermission,
+  hasAnyPermission,
+  hasAllPermissions,
+  expandRoles,
+  getUserDisplayName,
+  sanitizeUser,
+} from '@qpmtx/bff-auth';
 
 // Check roles and permissions
-AuthUtils.hasRole(user, 'admin');
-AuthUtils.hasAnyRole(user, ['admin', 'moderator']);
-AuthUtils.hasAllRoles(user, ['user', 'verified']);
-AuthUtils.hasPermission(user, 'read:users');
-AuthUtils.hasAnyPermission(user, ['read:users', 'write:users']);
-AuthUtils.hasAllPermissions(user, ['read:users', 'write:users']);
+hasRole(user, 'admin');
+hasAnyRole(user, ['admin', 'moderator']);
+hasAllRoles(user, ['user', 'verified']);
+hasPermission(user, 'read:users');
+hasAnyPermission(user, ['read:users', 'write:users']);
+hasAllPermissions(user, ['read:users', 'write:users']);
 
 // Role expansion with hierarchy
-AuthUtils.expandRoles(userRoles, roleHierarchy);
+expandRoles(userRoles, roleHierarchy);
 
 // User utilities
-AuthUtils.getUserDisplayName(user);
-AuthUtils.sanitizeUser(user, ['password', 'secret']);
+getUserDisplayName(user);
+sanitizeUser(user, ['password', 'secret']);
 ```
 
 ## Configuration Options
@@ -242,8 +262,8 @@ interface AuthModuleConfig {
   globalGuard?: boolean;
   defaultRoles?: string[];
   roleHierarchy?: Record<string, string[]>;
-  customUserValidator?: (user: any) => Promise<boolean> | boolean;
-  tokenExtractor?: (request: any) => string | null;
+  customUserValidator?: (user: unknown) => Promise<boolean> | boolean;
+  tokenExtractor?: (request: unknown) => string | null;
   unauthorizedMessage?: string;
   forbiddenMessage?: string;
 }
@@ -258,12 +278,12 @@ interface JwtConfig {
     expiresIn?: string | number;
     issuer?: string;
     audience?: string;
-    algorithm?: string;
+    algorithm?: Algorithm;
   };
   verifyOptions?: {
     issuer?: string;
     audience?: string;
-    algorithms?: string[];
+    algorithms?: Algorithm[];
     clockTolerance?: number;
     ignoreExpiration?: boolean;
     ignoreNotBefore?: boolean;
@@ -276,27 +296,64 @@ interface JwtConfig {
 ### Custom Guard
 
 ```typescript
-import { Injectable } from '@nestjs/common';
-import { AuthGuard } from '@qpmtx/bff-auth';
+import { Injectable, ExecutionContext } from '@nestjs/common';
+import { AbstractAuthGuard, AuthUser } from '@qpmtx/bff-auth';
 
 @Injectable()
-export class CustomAuthGuard extends AuthGuard {
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Custom logic before authentication
-    const result = await super.canActivate(context);
-    
-    if (result) {
-      // Additional checks after successful authentication
-      const request = context.switchToHttp().getRequest();
-      return this.customValidation(request.user);
-    }
-    
-    return false;
+export class CustomAuthGuard extends AbstractAuthGuard {
+  protected getRequest(context: ExecutionContext) {
+    return context.switchToHttp().getRequest();
   }
 
-  private customValidation(user: AuthUser): boolean {
+  protected async extractToken(request: any): Promise<string | null> {
+    const authHeader = request.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return authHeader.substring(7);
+    }
+    return null;
+  }
+
+  protected async validateToken(token: string): Promise<AuthUser | null> {
+    // Your token validation logic
+    try {
+      const payload = jwt.verify(token, 'your-secret');
+      return {
+        id: payload.sub,
+        email: payload.email,
+        roles: payload.roles || [],
+        permissions: payload.permissions || [],
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  protected async isPublicRoute(context: ExecutionContext): Promise<boolean> {
+    // Check for @Public() decorator
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    return isPublic || false;
+  }
+
+  protected async getGuardOptions(context: ExecutionContext) {
+    // Extract roles, permissions, and options from decorators
+    return {
+      roles: this.reflector.get<string[]>('roles', context.getHandler()),
+      permissions: this.reflector.get<string[]>('permissions', context.getHandler()),
+      requireAll: false,
+      allowAnonymous: false,
+    };
+  }
+
+  protected async customValidation(
+    user: AuthUser,
+    request: any,
+    context: ExecutionContext,
+  ): Promise<boolean> {
     // Your custom validation logic
-    return true;
+    return user.id !== 'blocked-user';
   }
 }
 ```
@@ -317,7 +374,7 @@ export class CustomAuthConfigService implements AuthConfigFactory {
       },
       globalGuard: true,
       defaultRoles: ['user'],
-      customUserValidator: async (user) => {
+      customUserValidator: async user => {
         // Custom validation logic
         return user.isActive;
       },
@@ -328,7 +385,7 @@ export class CustomAuthConfigService implements AuthConfigFactory {
 // Use in module
 AuthModule.forRootAsync({
   useClass: CustomAuthConfigService,
-})
+});
 ```
 
 ## License
