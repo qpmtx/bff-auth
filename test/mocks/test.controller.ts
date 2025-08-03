@@ -5,8 +5,8 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard, User } from '../../../src';
-import { AuthUser } from '../../../src/types';
+import { AuthUser, User } from '../../src';
+import { AuthGuard } from '../../src/guards/auth.guard';
 import { RolePermissionService } from './auth.mocks';
 
 @Controller('test')
