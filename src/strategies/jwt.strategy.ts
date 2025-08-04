@@ -2,17 +2,17 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AUTH_MODULE_CONFIG } from '../constants/tokens';
-import type { AuthModuleConfig } from '../interfaces';
-import type { AuthUser, JwtPayload } from '../types';
+import type { QPMTXAuthModuleConfig } from '../interfaces';
+import type { QPMTXAuthUser, QPMTXJwtPayload } from '../types';
 
 /**
  * JWT Strategy for Passport authentication
  * Handles JWT token validation and user extraction
  */
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class QPMTXJwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
-    @Inject(AUTH_MODULE_CONFIG) private readonly config: AuthModuleConfig,
+    @Inject(AUTH_MODULE_CONFIG) private readonly config: QPMTXAuthModuleConfig,
   ) {
     if (!config.jwt?.secret) throw new Error('JWT secret is required');
 
@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<AuthUser> {
+  async validate(payload: QPMTXJwtPayload): Promise<QPMTXAuthUser> {
     if (this.config.customUserValidator) {
       const ok = await this.config.customUserValidator(payload);
       if (!ok) throw new UnauthorizedException('Invalid user');
@@ -44,3 +44,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     };
   }
 }
+
+// Backward compatibility alias
+/** @deprecated Use QPMTXJwtStrategy instead */
+export const JwtStrategy = QPMTXJwtStrategy;

@@ -1,9 +1,12 @@
 import { AUTH_MODULE_CONFIG } from '../constants/tokens';
-import type { AuthConfigFactory, AuthModuleConfig } from '../interfaces';
+import type {
+  QPMTXAuthConfigFactory,
+  QPMTXAuthModuleConfig,
+} from '../interfaces';
 import { QPMTXAuthModule } from './auth.module';
 
-class MockAuthConfigFactory implements AuthConfigFactory {
-  createAuthConfig(): AuthModuleConfig {
+class MockAuthConfigFactory implements QPMTXAuthConfigFactory {
+  createAuthConfig(): QPMTXAuthModuleConfig {
     return {
       jwt: {
         secret: 'test-secret',
@@ -16,8 +19,8 @@ class MockAuthConfigFactory implements AuthConfigFactory {
   }
 }
 
-describe('AuthModule', () => {
-  const mockConfig: AuthModuleConfig = {
+describe('QPMTXAuthModule', () => {
+  const mockConfig: QPMTXAuthModuleConfig = {
     jwt: {
       secret: 'test-secret',
       signOptions: {

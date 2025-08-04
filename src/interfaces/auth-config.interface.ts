@@ -9,7 +9,7 @@ import type { Algorithm } from 'jsonwebtoken';
 /**
  * JWT configuration options for the authentication module
  */
-export interface JwtConfig {
+export interface QPMTXJwtConfig {
   /** JWT secret key for signing and verifying tokens */
   secret?: string;
   /** Options for signing JWT tokens */
@@ -43,9 +43,9 @@ export interface JwtConfig {
 /**
  * Main configuration interface for the authentication module
  */
-export interface AuthModuleConfig {
+export interface QPMTXAuthModuleConfig {
   /** JWT configuration */
-  jwt?: JwtConfig;
+  jwt?: QPMTXJwtConfig;
   /** Whether to apply the auth guard globally */
   globalGuard?: boolean;
   /** Default roles assigned to users if none specified */
@@ -65,15 +65,16 @@ export interface AuthModuleConfig {
 /**
  * Async configuration options for the authentication module
  */
-export interface AuthModuleAsyncConfig extends Pick<ModuleMetadata, 'imports'> {
+export interface QPMTXAuthModuleAsyncConfig
+  extends Pick<ModuleMetadata, 'imports'> {
   /** Factory function to create configuration */
   useFactory?: (
     ...args: unknown[]
-  ) => Promise<AuthModuleConfig> | AuthModuleConfig;
+  ) => Promise<QPMTXAuthModuleConfig> | QPMTXAuthModuleConfig;
   /** Class to create configuration */
-  useClass?: Type<AuthConfigFactory>;
+  useClass?: Type<QPMTXAuthConfigFactory>;
   /** Existing provider to create configuration */
-  useExisting?: Type<AuthConfigFactory>;
+  useExisting?: Type<QPMTXAuthConfigFactory>;
   /** Dependencies to inject into the factory */
   inject?: Array<InjectionToken | OptionalFactoryDependency>;
 }
@@ -81,10 +82,20 @@ export interface AuthModuleAsyncConfig extends Pick<ModuleMetadata, 'imports'> {
 /**
  * Interface for auth configuration factory classes
  */
-export interface AuthConfigFactory {
+export interface QPMTXAuthConfigFactory {
   /**
    * Creates authentication module configuration
-   * @returns Promise<AuthModuleConfig> | AuthModuleConfig
+   * @returns Promise<QPMTXAuthModuleConfig> | QPMTXAuthModuleConfig
    */
-  createAuthConfig(): Promise<AuthModuleConfig> | AuthModuleConfig;
+  createAuthConfig(): Promise<QPMTXAuthModuleConfig> | QPMTXAuthModuleConfig;
 }
+
+// Backward compatibility aliases
+/** @deprecated Use QPMTXJwtConfig instead */
+export type JwtConfig = QPMTXJwtConfig;
+/** @deprecated Use QPMTXAuthModuleConfig instead */
+export type AuthModuleConfig = QPMTXAuthModuleConfig;
+/** @deprecated Use QPMTXAuthModuleAsyncConfig instead */
+export type AuthModuleAsyncConfig = QPMTXAuthModuleAsyncConfig;
+/** @deprecated Use QPMTXAuthConfigFactory instead */
+export type AuthConfigFactory = QPMTXAuthConfigFactory;

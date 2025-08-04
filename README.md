@@ -86,25 +86,25 @@ export class AppModule {}
 
 ```typescript
 import { Controller, Get } from '@nestjs/common';
-import { Roles, Permissions, User, Public } from '@qpmtx/bff-auth';
+import { QPMTXRoles, QPMTXPermissions, QPMTXUser, QPMTXPublic, QPMTXAuthUser } from '@qpmtx/bff-auth';
 
 @Controller('users')
 export class UsersController {
   @Get('profile')
-  @Roles('user', 'admin')
-  getProfile(@User() user: AuthUser) {
+  @QPMTXRoles('user', 'admin')
+  getProfile(@QPMTXUser() user: QPMTXAuthUser) {
     return user;
   }
 
   @Get('admin')
-  @Roles('admin')
-  @Permissions('read:users')
+  @QPMTXRoles('admin')
+  @QPMTXPermissions('read:users')
   getAdminData() {
     return { message: 'Admin only data' };
   }
 
   @Get('public')
-  @Public()
+  @QPMTXPublic()
   getPublicData() {
     return { message: 'Public data' };
   }
@@ -114,12 +114,12 @@ export class UsersController {
 ### Advanced Authorization
 
 ```typescript
-import { AuthOptions } from '@qpmtx/bff-auth';
+import { QPMTXAuthOptions } from '@qpmtx/bff-auth';
 
 @Controller('api')
 export class ApiController {
   @Get('sensitive')
-  @AuthOptions({
+  @QPMTXAuthOptions({
     roles: ['admin', 'moderator'],
     permissions: ['read:sensitive'],
     requireAll: true, // Requires ALL roles AND permissions
@@ -129,7 +129,7 @@ export class ApiController {
   }
 
   @Get('flexible')
-  @AuthOptions({
+  @QPMTXAuthOptions({
     roles: ['user'],
     permissions: ['read:data'],
     requireAll: false, // Requires ANY role OR permission
@@ -185,7 +185,7 @@ QPMTXAuthModule.forRoot({
 ### Types
 
 ```typescript
-interface AuthUser {
+interface QPMTXAuthUser {
   id: string;
   email?: string;
   username?: string;
@@ -194,14 +194,14 @@ interface AuthUser {
   [key: string]: unknown;
 }
 
-interface AuthGuardOptions {
+interface QPMTXAuthGuardOptions {
   roles?: string[];
   permissions?: string[];
   requireAll?: boolean;
   allowAnonymous?: boolean;
 }
 
-interface JwtPayload {
+interface QPMTXJwtPayload {
   sub: string;
   email?: string;
   username?: string;
@@ -215,11 +215,24 @@ interface JwtPayload {
 
 ### Decorators
 
-- `@Roles(...roles: string[])` - Require specific roles
-- `@Permissions(...permissions: string[])` - Require specific permissions
-- `@AuthOptions(options: AuthGuardOptions)` - Advanced authorization options
-- `@Public()` - Mark endpoint as public (bypass authentication)
-- `@User(field?: keyof AuthUser)` - Inject user data into route handler
+- `@QPMTXRoles(...roles: string[])` - Require specific roles
+- `@QPMTXPermissions(...permissions: string[])` - Require specific permissions
+- `@QPMTXAuthOptions(options: QPMTXAuthGuardOptions)` - Advanced authorization options
+- `@QPMTXPublic()` - Mark endpoint as public (bypass authentication)
+- `@QPMTXUser(field?: keyof QPMTXAuthUser)` - Inject user data into route handler
+
+### Backward Compatibility
+
+All decorators and types are also available with their original names for backward compatibility:
+
+- `@Roles` (deprecated, use `@QPMTXRoles`)
+- `@Permissions` (deprecated, use `@QPMTXPermissions`)
+- `@AuthOptions` (deprecated, use `@QPMTXAuthOptions`)
+- `@Public` (deprecated, use `@QPMTXPublic`)
+- `@User` (deprecated, use `@QPMTXUser`)
+- `AuthUser` (deprecated, use `QPMTXAuthUser`)
+- `AuthGuardOptions` (deprecated, use `QPMTXAuthGuardOptions`)
+- `JwtPayload` (deprecated, use `QPMTXJwtPayload`)
 
 ### Utilities
 
@@ -258,7 +271,7 @@ sanitizeUser(user, ['password', 'secret']);
 
 ```typescript
 interface QPMTXAuthModuleConfig {
-  jwt?: JwtConfig;
+  jwt?: QPMTXJwtConfig;
   globalGuard?: boolean;
   defaultRoles?: string[];
   roleHierarchy?: Record<string, string[]>;
@@ -272,7 +285,7 @@ interface QPMTXAuthModuleConfig {
 ### JWT Configuration
 
 ```typescript
-interface JwtConfig {
+interface QPMTXJwtConfig {
   secret?: string;
   signOptions?: {
     expiresIn?: string | number;
@@ -297,10 +310,10 @@ interface JwtConfig {
 
 ```typescript
 import { Injectable, ExecutionContext } from '@nestjs/common';
-import { AbstractAuthGuard, AuthUser } from '@qpmtx/bff-auth';
+import { QPMTXAbstractAuthGuard, QPMTXAuthUser } from '@qpmtx/bff-auth';
 
 @Injectable()
-export class CustomAuthGuard extends AbstractAuthGuard {
+export class CustomAuthGuard extends QPMTXAbstractAuthGuard {
   protected getRequest(context: ExecutionContext) {
     return context.switchToHttp().getRequest();
   }
@@ -313,7 +326,7 @@ export class CustomAuthGuard extends AbstractAuthGuard {
     return null;
   }
 
-  protected async validateToken(token: string): Promise<AuthUser | null> {
+  protected async validateToken(token: string): Promise<QPMTXAuthUser | null> {
     // Your token validation logic
     try {
       const payload = jwt.verify(token, 'your-secret');
@@ -329,7 +342,7 @@ export class CustomAuthGuard extends AbstractAuthGuard {
   }
 
   protected async isPublicRoute(context: ExecutionContext): Promise<boolean> {
-    // Check for @Public() decorator
+    // Check for @QPMTXPublic() decorator
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -348,7 +361,7 @@ export class CustomAuthGuard extends AbstractAuthGuard {
   }
 
   protected async customValidation(
-    user: AuthUser,
+    user: QPMTXAuthUser,
     request: any,
     context: ExecutionContext,
   ): Promise<boolean> {
@@ -362,10 +375,10 @@ export class CustomAuthGuard extends AbstractAuthGuard {
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { AuthConfigFactory, QPMTXAuthModuleConfig } from '@qpmtx/bff-auth';
+import { QPMTXAuthConfigFactory, QPMTXAuthModuleConfig } from '@qpmtx/bff-auth';
 
 @Injectable()
-export class CustomAuthConfigService implements AuthConfigFactory {
+export class CustomAuthConfigService implements QPMTXAuthConfigFactory {
   createAuthConfig(): QPMTXAuthModuleConfig {
     return {
       jwt: {

@@ -8,11 +8,15 @@ import { ROLES_KEY } from './metadata.constants';
  *
  * @example
  * ```typescript
- * @Roles('admin', 'moderator')
+ * @QPMTXRoles('admin', 'moderator')
  * @Get('/protected')
  * getProtectedResource() {
  *   return 'Only admins and moderators can access this';
  * }
  * ```
  */
-export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
+export const QPMTXRoles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
+
+// Backward compatibility alias
+/** @deprecated Use QPMTXRoles instead */
+export const Roles = QPMTXRoles;

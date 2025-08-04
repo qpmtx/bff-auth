@@ -2,13 +2,13 @@ import { UnauthorizedException } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { AUTH_MODULE_CONFIG } from '../constants/tokens';
-import type { AuthModuleConfig } from '../interfaces';
-import type { JwtPayload } from '../types';
-import { JwtStrategy } from './jwt.strategy';
+import type { QPMTXAuthModuleConfig } from '../interfaces';
+import type { QPMTXJwtPayload } from '../types';
+import { QPMTXJwtStrategy } from './jwt.strategy';
 
-describe('JwtStrategy', () => {
-  let strategy: JwtStrategy;
-  let mockConfig: AuthModuleConfig;
+describe('QPMTXJwtStrategy', () => {
+  let strategy: QPMTXJwtStrategy;
+  let mockConfig: QPMTXAuthModuleConfig;
 
   beforeEach(async () => {
     mockConfig = {
@@ -27,9 +27,9 @@ describe('JwtStrategy', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
-          provide: JwtStrategy,
-          useFactory: (config: AuthModuleConfig) => {
-            return new JwtStrategy(config);
+          provide: QPMTXJwtStrategy,
+          useFactory: (config: QPMTXAuthModuleConfig) => {
+            return new QPMTXJwtStrategy(config);
           },
           inject: [AUTH_MODULE_CONFIG],
         },
@@ -40,7 +40,7 @@ describe('JwtStrategy', () => {
       ],
     }).compile();
 
-    strategy = module.get<JwtStrategy>(JwtStrategy);
+    strategy = module.get<QPMTXJwtStrategy>(QPMTXJwtStrategy);
   });
 
   describe('constructor', () => {
@@ -55,9 +55,9 @@ describe('JwtStrategy', () => {
         Test.createTestingModule({
           providers: [
             {
-              provide: JwtStrategy,
-              useFactory: (config: AuthModuleConfig) => {
-                return new JwtStrategy(config);
+              provide: QPMTXJwtStrategy,
+              useFactory: (config: QPMTXAuthModuleConfig) => {
+                return new QPMTXJwtStrategy(config);
               },
               inject: [AUTH_MODULE_CONFIG],
             },
@@ -72,7 +72,7 @@ describe('JwtStrategy', () => {
   });
 
   describe('validate', () => {
-    const mockPayload: JwtPayload = {
+    const mockPayload: QPMTXJwtPayload = {
       sub: 'user-123',
       email: 'test@example.com',
       username: 'testuser',
@@ -95,7 +95,7 @@ describe('JwtStrategy', () => {
     });
 
     it('should use default roles when payload roles are empty', async () => {
-      const payloadWithoutRoles: JwtPayload = {
+      const payloadWithoutRoles: QPMTXJwtPayload = {
         sub: 'user-123',
         roles: [],
       };
@@ -132,7 +132,7 @@ describe('JwtStrategy', () => {
     });
 
     it('should handle missing optional fields gracefully', async () => {
-      const minimalPayload: JwtPayload = {
+      const minimalPayload: QPMTXJwtPayload = {
         sub: 'user-123',
         roles: ['user'],
       };
