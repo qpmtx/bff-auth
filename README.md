@@ -1,4 +1,4 @@
-# @qpmtx/bff-auth
+# @qpmtx/nestjs-auth
 
 A comprehensive, type-safe authentication library for NestJS applications with configurable guards, role-based access control, and flexible configuration options.
 
@@ -16,9 +16,9 @@ A comprehensive, type-safe authentication library for NestJS applications with c
 ## Installation
 
 ```bash
-npm install @qpmtx/bff-auth
+npm install @qpmtx/nestjs-auth
 # or
-yarn add @qpmtx/bff-auth
+yarn add @qpmtx/nestjs-auth
 ```
 
 ## The library includes these dependencies
@@ -34,7 +34,7 @@ yarn add @qpmtx/bff-auth
 
 ```typescript
 import { Module } from '@nestjs/common';
-import { QPMTXAuthModule } from '@qpmtx/bff-auth';
+import { QPMTXAuthModule } from '@qpmtx/nestjs-auth';
 
 @Module({
   imports: [
@@ -56,7 +56,7 @@ export class AppModule {}
 ```typescript
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { QPMTXAuthModule } from '@qpmtx/bff-auth';
+import { QPMTXAuthModule } from '@qpmtx/nestjs-auth';
 
 @Module({
   imports: [
@@ -86,7 +86,13 @@ export class AppModule {}
 
 ```typescript
 import { Controller, Get } from '@nestjs/common';
-import { QPMTXRoles, QPMTXPermissions, QPMTXUser, QPMTXPublic, QPMTXAuthUser } from '@qpmtx/bff-auth';
+import {
+  QPMTXRoles,
+  QPMTXPermissions,
+  QPMTXUser,
+  QPMTXPublic,
+  QPMTXAuthUser,
+} from '@qpmtx/nestjs-auth';
 
 @Controller('users')
 export class UsersController {
@@ -114,7 +120,7 @@ export class UsersController {
 ### Advanced Authorization
 
 ```typescript
-import { QPMTXAuthOptions } from '@qpmtx/bff-auth';
+import { QPMTXAuthOptions } from '@qpmtx/nestjs-auth';
 
 @Controller('api')
 export class ApiController {
@@ -247,7 +253,7 @@ import {
   expandRoles,
   getUserDisplayName,
   sanitizeUser,
-} from '@qpmtx/bff-auth';
+} from '@qpmtx/nestjs-auth';
 
 // Check roles and permissions
 hasRole(user, 'admin');
@@ -310,7 +316,7 @@ interface QPMTXJwtConfig {
 
 ```typescript
 import { Injectable, ExecutionContext } from '@nestjs/common';
-import { QPMTXAbstractAuthGuard, QPMTXAuthUser } from '@qpmtx/bff-auth';
+import { QPMTXAbstractAuthGuard, QPMTXAuthUser } from '@qpmtx/nestjs-auth';
 
 @Injectable()
 export class CustomAuthGuard extends QPMTXAbstractAuthGuard {
@@ -375,7 +381,7 @@ export class CustomAuthGuard extends QPMTXAbstractAuthGuard {
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { QPMTXAuthConfigFactory, QPMTXAuthModuleConfig } from '@qpmtx/bff-auth';
+import { QPMTXAuthConfigFactory, QPMTXAuthModuleConfig } from '@qpmtx/nestjs-auth';
 
 @Injectable()
 export class CustomAuthConfigService implements QPMTXAuthConfigFactory {
