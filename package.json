@@ -1,6 +1,6 @@
 {
   "name": "@qpmtx/nestjs-auth",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Type-safe authentication library for NestJS with configurable guards and role-based access control",
   "author": {
     "name": "QPMatrix",
@@ -24,7 +24,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/qpmtx/bff-auth.git"
+    "url": "https://github.com/qpmtx/nestjs-auth"
   },
   "scripts": {
     "build": "nest build",
