@@ -1,4 +1,4 @@
-import type { GenericUser } from '../types/generic.types';
+import type { QPMTXGenericUser } from '../types/generic.types';
 
 /**
  * Checks if user has a specific role
@@ -6,7 +6,7 @@ import type { GenericUser } from '../types/generic.types';
  * @param role - Role to check for
  * @returns True if user has the role
  */
-export const hasRole = <TUser extends GenericUser>(
+export const hasRole = <TUser extends QPMTXGenericUser>(
   user: TUser,
   role: string,
 ): boolean => {
@@ -19,7 +19,7 @@ export const hasRole = <TUser extends GenericUser>(
  * @param roles - Roles to check for
  * @returns True if user has any of the roles
  */
-export const hasAnyRole = <TUser extends GenericUser>(
+export const hasAnyRole = <TUser extends QPMTXGenericUser>(
   user: TUser,
   roles: string[],
 ): boolean => {
@@ -32,7 +32,7 @@ export const hasAnyRole = <TUser extends GenericUser>(
  * @param roles - Roles to check for
  * @returns True if user has all of the roles
  */
-export const hasAllRoles = <TUser extends GenericUser>(
+export const hasAllRoles = <TUser extends QPMTXGenericUser>(
   user: TUser,
   roles: string[],
 ): boolean => {
@@ -45,7 +45,7 @@ export const hasAllRoles = <TUser extends GenericUser>(
  * @param permission - Permission to check for
  * @returns True if user has the permission
  */
-export const hasPermission = <TUser extends GenericUser>(
+export const hasPermission = <TUser extends QPMTXGenericUser>(
   user: TUser,
   permission: string,
 ): boolean => {
@@ -58,7 +58,7 @@ export const hasPermission = <TUser extends GenericUser>(
  * @param permissions - Permissions to check for
  * @returns True if user has any of the permissions
  */
-export const hasAnyPermission = <TUser extends GenericUser>(
+export const hasAnyPermission = <TUser extends QPMTXGenericUser>(
   user: TUser,
   permissions: string[],
 ): boolean => {
@@ -71,7 +71,7 @@ export const hasAnyPermission = <TUser extends GenericUser>(
  * @param permissions - Permissions to check for
  * @returns True if user has all of the permissions
  */
-export const hasAllPermissions = <TUser extends GenericUser>(
+export const hasAllPermissions = <TUser extends QPMTXGenericUser>(
   user: TUser,
   permissions: string[],
 ): boolean => {
@@ -107,7 +107,7 @@ export const expandRoles = (
  * @param user - User to get display name for
  * @returns User's display name
  */
-export const getUserDisplayName = <TUser extends GenericUser>(
+export const getUserDisplayName = <TUser extends QPMTXGenericUser>(
   user: TUser,
 ): string => {
   return user.username ?? user.email ?? user.id;
@@ -119,7 +119,7 @@ export const getUserDisplayName = <TUser extends GenericUser>(
  * @param fieldsToExclude - Fields to exclude from sanitized user
  * @returns Sanitized user object
  */
-export const sanitizeUser = <TUser extends GenericUser>(
+export const sanitizeUser = <TUser extends QPMTXGenericUser>(
   user: TUser,
   fieldsToExclude: Array<keyof TUser> = [],
 ): Partial<TUser> => {

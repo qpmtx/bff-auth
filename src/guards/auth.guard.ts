@@ -14,25 +14,33 @@ import {
   PUBLIC_KEY,
   ROLES_KEY,
 } from '../decorators/metadata.constants';
-import { AuthModuleConfig, IAuthGuard, IGuardConfig } from '../interfaces';
-import { AuthGuardOptions, AuthUser, BaseRequest } from '../types';
+import {
+  QPMTXAuthModuleConfig,
+  QPMTXIAuthGuard,
+  QPMTXIGuardConfig,
+} from '../interfaces';
+import {
+  QPMTXAuthGuardOptions,
+  QPMTXAuthUser,
+  QPMTXBaseRequest,
+} from '../types';
 /**
  * Authentication guard that extends Passport JWT guard
  * Provides role-based and permission-based access control
  */
 @Injectable()
-export class AuthGuard
+export class QPMTXAuthGuard
   extends PassportAuthGuard('jwt')
-  implements IAuthGuard, IGuardConfig
+  implements QPMTXIAuthGuard, QPMTXIGuardConfig
 {
   /**
-   * Creates an instance of AuthGuard
+   * Creates an instance of QPMTXAuthGuard
    * @param reflector - NestJS Reflector for metadata access
    * @param config - Authentication module configuration
    */
   constructor(
     private readonly reflector: Reflector,
-    @Inject(AUTH_MODULE_CONFIG) private readonly config: AuthModuleConfig,
+    @Inject(AUTH_MODULE_CONFIG) private readonly config: QPMTXAuthModuleConfig,
   ) {
     super();
   }
@@ -64,8 +72,8 @@ export class AuthGuard
         return false;
       }
 
-      const request = context.switchToHttp().getRequest<BaseRequest>();
-      const user = request.user as AuthUser;
+      const request = context.switchToHttp().getRequest<QPMTXBaseRequest>();
+      const user = request.user as QPMTXAuthUser;
 
       if (!user) {
         throw new UnauthorizedException(this.config.unauthorizedMessage);
@@ -80,9 +88,9 @@ export class AuthGuard
   /**
    * Extracts guard options from decorators
    * @param context - Execution context
-   * @returns AuthGuardOptions - Combined guard options
+   * @returns QPMTXAuthGuardOptions - Combined guard options
    */
-  getGuardOptions(context: ExecutionContext): AuthGuardOptions {
+  getGuardOptions(context: ExecutionContext): QPMTXAuthGuardOptions {
     const roles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -93,7 +101,7 @@ export class AuthGuard
       [context.getHandler(), context.getClass()],
     );
 
-    const authOptions = this.reflector.getAllAndOverride<AuthGuardOptions>(
+    const authOptions = this.reflector.getAllAndOverride<QPMTXAuthGuardOptions>(
       AUTH_OPTIONS_KEY,
       [context.getHandler(), context.getClass()],
     );
@@ -141,8 +149,8 @@ export class AuthGuard
    * @returns boolean - True if user has required access
    */
   private validateRolesAndPermissions(
-    user: AuthUser,
-    options: AuthGuardOptions,
+    user: QPMTXAuthUser,
+    options: QPMTXAuthGuardOptions,
   ): boolean {
     if (!options.roles && !options.permissions) {
       return true;
@@ -164,7 +172,10 @@ export class AuthGuard
    * @param options - Guard options with role requirements
    * @returns boolean - True if user has required roles
    */
-  private validateRoles(user: AuthUser, options: AuthGuardOptions): boolean {
+  private validateRoles(
+    user: QPMTXAuthUser,
+    options: QPMTXAuthGuardOptions,
+  ): boolean {
     if (!options.roles || options.roles.length === 0) {
       return true;
     }
@@ -186,8 +197,8 @@ export class AuthGuard
    * @returns boolean - True if user has required permissions
    */
   private validatePermissions(
-    user: AuthUser,
-    options: AuthGuardOptions,
+    user: QPMTXAuthUser,
+    options: QPMTXAuthGuardOptions,
   ): boolean {
     if (!options.permissions || options.permissions.length === 0) {
       return true;
@@ -226,3 +237,7 @@ export class AuthGuard
     return Array.from(expandedRoles);
   }
 }
+
+// Backward compatibility alias
+/** @deprecated Use QPMTXAuthGuard instead */
+export const AuthGuard = QPMTXAuthGuard;

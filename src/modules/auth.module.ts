@@ -4,27 +4,27 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { authConfig } from '../config/auth.config';
 import { AUTH_MODULE_CONFIG } from '../constants';
-import { AuthGuard } from '../guards';
+import { QPMTXAuthGuard } from '../guards';
 import {
-  AuthConfigFactory,
-  AuthModuleAsyncConfig,
-  AuthModuleConfig,
+  QPMTXAuthConfigFactory,
+  QPMTXAuthModuleAsyncConfig,
+  QPMTXAuthModuleConfig,
 } from '../interfaces';
-import { JwtStrategy } from '../strategies';
+import { QPMTXJwtStrategy } from '../strategies';
 
 @Global()
 @Module({})
 export class QPMTXAuthModule {
-  static forRoot(config: AuthModuleConfig): DynamicModule {
+  static forRoot(config: QPMTXAuthModuleConfig): DynamicModule {
     const configProvider: Provider = {
       provide: AUTH_MODULE_CONFIG,
       useValue: config,
     };
 
-    // Build JwtStrategy with the injected config (no unresolved deps)
+    // Build QPMTXJwtStrategy with the injected config (no unresolved deps)
     const jwtStrategyProvider: Provider = {
-      provide: JwtStrategy,
-      useFactory: (cfg: AuthModuleConfig) => new JwtStrategy(cfg),
+      provide: QPMTXJwtStrategy,
+      useFactory: (cfg: QPMTXAuthModuleConfig) => new QPMTXJwtStrategy(cfg),
       inject: [AUTH_MODULE_CONFIG],
     };
 
@@ -38,23 +38,23 @@ export class QPMTXAuthModule {
           signOptions: config.jwt?.signOptions ?? {},
         }),
       ],
-      providers: [configProvider, jwtStrategyProvider, AuthGuard],
+      providers: [configProvider, jwtStrategyProvider, QPMTXAuthGuard],
       exports: [
         AUTH_MODULE_CONFIG,
         JwtModule,
         PassportModule,
-        AuthGuard,
-        JwtStrategy,
+        QPMTXAuthGuard,
+        QPMTXJwtStrategy,
       ],
     };
   }
 
-  static forRootAsync(options: AuthModuleAsyncConfig): DynamicModule {
+  static forRootAsync(options: QPMTXAuthModuleAsyncConfig): DynamicModule {
     const asyncProviders = this.createAsyncProviders(options);
 
     const jwtStrategyProvider: Provider = {
-      provide: JwtStrategy,
-      useFactory: (cfg: AuthModuleConfig) => new JwtStrategy(cfg),
+      provide: QPMTXJwtStrategy,
+      useFactory: (cfg: QPMTXAuthModuleConfig) => new QPMTXJwtStrategy(cfg),
       inject: [AUTH_MODULE_CONFIG],
     };
 
@@ -64,7 +64,7 @@ export class QPMTXAuthModule {
         ConfigModule.forFeature(authConfig),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
-          useFactory: (cfg: AuthModuleConfig) => ({
+          useFactory: (cfg: QPMTXAuthModuleConfig) => ({
             secret: cfg.jwt?.secret,
             signOptions: cfg.jwt?.signOptions ?? {},
           }),
@@ -73,19 +73,19 @@ export class QPMTXAuthModule {
         }),
         ...(options.imports ?? []),
       ],
-      providers: [...asyncProviders, jwtStrategyProvider, AuthGuard],
+      providers: [...asyncProviders, jwtStrategyProvider, QPMTXAuthGuard],
       exports: [
         AUTH_MODULE_CONFIG,
         JwtModule,
         PassportModule,
-        AuthGuard,
-        JwtStrategy,
+        QPMTXAuthGuard,
+        QPMTXJwtStrategy,
       ],
     };
   }
 
   private static createAsyncProviders(
-    options: AuthModuleAsyncConfig,
+    options: QPMTXAuthModuleAsyncConfig,
   ): Provider[] {
     if (options.useFactory) {
       return [
@@ -101,7 +101,7 @@ export class QPMTXAuthModule {
       return [
         {
           provide: AUTH_MODULE_CONFIG,
-          useFactory: async (factory: AuthConfigFactory) =>
+          useFactory: async (factory: QPMTXAuthConfigFactory) =>
             factory.createAuthConfig(),
           inject: [options.useClass],
         },
@@ -116,7 +116,7 @@ export class QPMTXAuthModule {
       return [
         {
           provide: AUTH_MODULE_CONFIG,
-          useFactory: async (factory: AuthConfigFactory) =>
+          useFactory: async (factory: QPMTXAuthConfigFactory) =>
             factory.createAuthConfig(),
           inject: [options.useExisting],
         },

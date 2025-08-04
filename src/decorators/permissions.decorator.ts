@@ -8,12 +8,16 @@ import { PERMISSIONS_KEY } from './metadata.constants';
  *
  * @example
  * ```typescript
- * @Permissions('read:users', 'write:users')
+ * @QPMTXPermissions('read:users', 'write:users')
  * @Post('/users')
  * createUser() {
  *   return 'Only users with read:users and write:users permissions can access this';
  * }
  * ```
  */
-export const Permissions = (...permissions: string[]) =>
+export const QPMTXPermissions = (...permissions: string[]) =>
   SetMetadata(PERMISSIONS_KEY, permissions);
+
+// Backward compatibility alias
+/** @deprecated Use QPMTXPermissions instead */
+export const Permissions = QPMTXPermissions;

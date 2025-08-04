@@ -1,10 +1,10 @@
 import type { ExecutionContext } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import type {
-  GenericGuardOptions,
-  GenericJwtPayload,
-  GenericRequest,
-  GenericUser,
+  QPMTXGenericGuardOptions,
+  QPMTXGenericJwtPayload,
+  QPMTXGenericRequest,
+  QPMTXGenericUser,
 } from '../types/generic.types';
 
 /**
@@ -12,10 +12,10 @@ import type {
  * Provides base functionality for user authentication and authorization
  */
 @Injectable()
-export abstract class AbstractAuthService<
-  TUser extends GenericUser = GenericUser,
-  TJwtPayload extends GenericJwtPayload = GenericJwtPayload,
-  TRequest extends GenericRequest = GenericRequest,
+export abstract class QPMTXAbstractAuthService<
+  TUser extends QPMTXGenericUser = QPMTXGenericUser,
+  TJwtPayload extends QPMTXGenericJwtPayload = QPMTXGenericJwtPayload,
+  TRequest extends QPMTXGenericRequest = QPMTXGenericRequest,
 > {
   /**
    * Validates a JWT token and returns the user
@@ -147,7 +147,7 @@ export abstract class AbstractAuthService<
    */
   validateGuardOptions(
     user: TUser,
-    options: GenericGuardOptions,
+    options: QPMTXGenericGuardOptions,
     context?: ExecutionContext,
   ): boolean {
     // Custom validator takes precedence
@@ -178,7 +178,10 @@ export abstract class AbstractAuthService<
    * @param options - Guard options containing role requirements
    * @returns True if user has required roles
    */
-  protected validateRoles(user: TUser, options: GenericGuardOptions): boolean {
+  protected validateRoles(
+    user: TUser,
+    options: QPMTXGenericGuardOptions,
+  ): boolean {
     if (!options.roles || options.roles.length === 0) {
       return true;
     }
@@ -198,7 +201,7 @@ export abstract class AbstractAuthService<
    */
   protected validatePermissions(
     user: TUser,
-    options: GenericGuardOptions,
+    options: QPMTXGenericGuardOptions,
   ): boolean {
     if (!options.permissions || options.permissions.length === 0) {
       return true;
@@ -267,3 +270,7 @@ export abstract class AbstractAuthService<
     // Subclasses can override for logging, monitoring, etc.
   }
 }
+
+// Backward compatibility alias
+/** @deprecated Use QPMTXAbstractAuthService instead */
+export const AbstractAuthService = QPMTXAbstractAuthService;

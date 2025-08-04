@@ -1,18 +1,22 @@
 import type {
-  AuthUser,
-  JwtPayload,
-  TokenValidationResult,
+  QPMTXAuthUser,
+  QPMTXJwtPayload,
+  QPMTXTokenValidationResult,
 } from '../types/auth.types';
 
-export interface IAuthService {
-  validateToken(token: string): Promise<TokenValidationResult>;
-  validateUser(payload: JwtPayload): Promise<AuthUser | null>;
-  generateToken(user: AuthUser): Promise<string>;
+export interface QPMTXIAuthService {
+  validateToken(token: string): Promise<QPMTXTokenValidationResult>;
+  validateUser(payload: QPMTXJwtPayload): Promise<QPMTXAuthUser | null>;
+  generateToken(user: QPMTXAuthUser): Promise<string>;
   refreshToken(token: string): Promise<string>;
-  hasRole(user: AuthUser, role: string): boolean;
-  hasPermission(user: AuthUser, permission: string): boolean;
-  hasAnyRole(user: AuthUser, roles: string[]): boolean;
-  hasAllRoles(user: AuthUser, roles: string[]): boolean;
-  hasAnyPermission(user: AuthUser, permissions: string[]): boolean;
-  hasAllPermissions(user: AuthUser, permissions: string[]): boolean;
+  hasRole(user: QPMTXAuthUser, role: string): boolean;
+  hasPermission(user: QPMTXAuthUser, permission: string): boolean;
+  hasAnyRole(user: QPMTXAuthUser, roles: string[]): boolean;
+  hasAllRoles(user: QPMTXAuthUser, roles: string[]): boolean;
+  hasAnyPermission(user: QPMTXAuthUser, permissions: string[]): boolean;
+  hasAllPermissions(user: QPMTXAuthUser, permissions: string[]): boolean;
 }
+
+// Backward compatibility alias
+/** @deprecated Use QPMTXIAuthService instead */
+export type IAuthService = QPMTXIAuthService;

@@ -79,10 +79,9 @@ jobs:
     needs: check-pr-merge
     if: needs.check-pr-merge.outputs.is-pr-merge == 'true'
 
-    # Required for OIDC (Trusted Publishing) + creating GitHub releases
+    # Required for creating GitHub releases
     permissions:
       contents: write
-      id-token: write
 
     steps:
       - name: "🔍 Checkout code"
@@ -100,10 +99,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org
-
-      # npm 11.5.1+ is required for trusted publishing & automatic provenance
-      - name: "⬆️ Ensure recent npm"
-        run: npm install -g npm@latest
+          always-auth: true
 
       - name: "📥 Install dependencies"
         run: pnpm install --no-frozen-lockfile
@@ -144,6 +140,18 @@ jobs:
       - name: "🏗️ Build package (post-bump)"
         run: pnpm build
 
+      - name: "🔑 Authenticate with npm"
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+          echo "always-auth=true" >> ~/.npmrc
+          
+      - name: "🔍 Verify npm authentication"
+        run: |
+          echo "Verifying npm authentication..."
+          npm whoami
+          echo "✅ NPM authentication successful"
+
       - name: "📄 Generate changelog entry"
         id: changelog
         env:
@@ -178,24 +186,54 @@ jobs:
       - name: "📤 Push changes & tags"
         run: git push --follow-tags origin main
 
-      # 👉 Trusted Publishing: no NPM_TOKEN required; OIDC is used automatically.
-      # First scoped publish must be public; subsequent runs are fine too.
-      - name: "📦 Publish to npm (trusted publishing)"
-        run: npm publish --access public
+      - name: "📦 Publish to npm"
+        run: |
+          echo "Publishing @qpmtx/bff-auth@${{ steps.bump-version.outputs.new }} to npm..."
+          npm publish --access public
+          echo "✅ Package published successfully!"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          
+      - name: "✅ Verify npm publish"
+        run: |
+          echo "Verifying package was published..."
+          sleep 10  # Wait for npm registry to sync
+          npm view @qpmtx/bff-auth@${{ steps.bump-version.outputs.new }}
+          echo "✅ Package verification successful!"
 
       - name: "📋 Create GitHub Release"
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.create-tag.outputs.tag-name }}
-          release_name: "🚀 Release v${{ steps.bump-version.outputs.new }}"
+          name: "🚀 Release v${{ steps.bump-version.outputs.new }}"
           body: |
-            ## What’s New
+            ## 📦 What's New
+            
             - ${{ needs.check-pr-merge.outputs.pr-title }}
+            
+            ## 📥 Installation
+            
+            ```bash
+            npm install @qpmtx/bff-auth@${{ steps.bump-version.outputs.new }}
+            # or
+            pnpm add @qpmtx/bff-auth@${{ steps.bump-version.outputs.new }}
+            # or  
+            yarn add @qpmtx/bff-auth@${{ steps.bump-version.outputs.new }}
+            ```
+            
+            ## 🔗 Links
+            
+            - 📦 [NPM Package](https://www.npmjs.com/package/@qpmtx/bff-auth)
+            - 📚 [Documentation](https://github.com/qpmtx/bff-auth#readme)
+            - 🐛 [Report Issues](https://github.com/qpmtx/bff-auth/issues)
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "📊 Summary"
         run: |
           echo "### ✅ Released v${{ steps.bump-version.outputs.new }} to npm" >> "$GITHUB_STEP_SUMMARY"
+          echo "🔗 **Package**: https://www.npmjs.com/package/@qpmtx/bff-auth" >> "$GITHUB_STEP_SUMMARY"
+          echo "📦 **Version**: v${{ steps.bump-version.outputs.new }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "🏷️ **Tag**: ${{ steps.create-tag.outputs.tag-name }}" >> "$GITHUB_STEP_SUMMARY"

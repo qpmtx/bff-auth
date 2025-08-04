@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import type { Observable } from 'rxjs';
 import type {
-  GenericGuardOptions,
-  GenericRequest,
-  GenericUser,
+  QPMTXGenericGuardOptions,
+  QPMTXGenericRequest,
+  QPMTXGenericUser,
 } from '../types/generic.types';
 
 /**
@@ -16,9 +16,9 @@ import type {
  * Provides base functionality for request authentication and authorization
  */
 @Injectable()
-export abstract class AbstractAuthGuard<
-  TUser extends GenericUser = GenericUser,
-  TRequest extends GenericRequest = GenericRequest,
+export abstract class QPMTXAbstractAuthGuard<
+  TUser extends QPMTXGenericUser = QPMTXGenericUser,
+  TRequest extends QPMTXGenericRequest = QPMTXGenericRequest,
 > implements CanActivate
 {
   /**
@@ -123,7 +123,7 @@ export abstract class AbstractAuthGuard<
    */
   protected abstract getGuardOptions(
     context: ExecutionContext,
-  ): Promise<GenericGuardOptions>;
+  ): Promise<QPMTXGenericGuardOptions>;
 
   /**
    * Attaches authenticated user to the request object
@@ -131,7 +131,7 @@ export abstract class AbstractAuthGuard<
    * @param user - Authenticated user
    */
   protected attachUserToRequest(request: TRequest, user: TUser): void {
-    (request as GenericRequest).user = user;
+    (request as QPMTXGenericRequest).user = user;
   }
 
   /**
@@ -143,7 +143,7 @@ export abstract class AbstractAuthGuard<
    */
   protected validateUserAccess(
     user: TUser,
-    options: GenericGuardOptions,
+    options: QPMTXGenericGuardOptions,
     context: ExecutionContext,
   ): boolean {
     // Custom validator takes precedence
@@ -174,7 +174,10 @@ export abstract class AbstractAuthGuard<
    * @param options - Guard options containing role requirements
    * @returns True if user has required roles
    */
-  protected validateRoles(user: TUser, options: GenericGuardOptions): boolean {
+  protected validateRoles(
+    user: TUser,
+    options: QPMTXGenericGuardOptions,
+  ): boolean {
     if (!options.roles || options.roles.length === 0) {
       return true;
     }
@@ -197,7 +200,7 @@ export abstract class AbstractAuthGuard<
    */
   protected validatePermissions(
     user: TUser,
-    options: GenericGuardOptions,
+    options: QPMTXGenericGuardOptions,
   ): boolean {
     if (!options.permissions || options.permissions.length === 0) {
       return true;
@@ -335,3 +338,7 @@ export abstract class AbstractAuthGuard<
     // Override in subclasses for logging, monitoring, etc.
   }
 }
+
+// Backward compatibility alias
+/** @deprecated Use QPMTXAbstractAuthGuard instead */
+export const AbstractAuthGuard = QPMTXAbstractAuthGuard;

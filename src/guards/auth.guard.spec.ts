@@ -5,16 +5,16 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { AUTH_MODULE_CONFIG } from '../constants/tokens';
 import { PUBLIC_KEY } from '../decorators/metadata.constants';
-import type { AuthModuleConfig } from '../interfaces';
-import type { AuthGuardOptions, AuthUser } from '../types';
-import { AuthGuard } from './auth.guard';
+import type { QPMTXAuthModuleConfig } from '../interfaces';
+import type { QPMTXAuthGuardOptions, QPMTXAuthUser } from '../types';
+import { QPMTXAuthGuard } from './auth.guard';
 
-describe('AuthGuard', () => {
-  let guard: AuthGuard;
+describe('QPMTXAuthGuard', () => {
+  let guard: QPMTXAuthGuard;
   let reflector: Reflector;
-  let mockConfig: AuthModuleConfig;
+  let mockConfig: QPMTXAuthModuleConfig;
 
-  const mockExecutionContext = (user?: AuthUser) => {
+  const mockExecutionContext = (user?: QPMTXAuthUser) => {
     const mockRequest = {
       user,
       headers: {},
@@ -46,9 +46,9 @@ describe('AuthGuard', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
-          provide: AuthGuard,
-          useFactory: (reflector: Reflector, config: AuthModuleConfig) => {
-            return new AuthGuard(reflector, config);
+          provide: QPMTXAuthGuard,
+          useFactory: (reflector: Reflector, config: QPMTXAuthModuleConfig) => {
+            return new QPMTXAuthGuard(reflector, config);
           },
           inject: [Reflector, AUTH_MODULE_CONFIG],
         },
@@ -60,7 +60,7 @@ describe('AuthGuard', () => {
       ],
     }).compile();
 
-    guard = module.get<AuthGuard>(AuthGuard);
+    guard = module.get<QPMTXAuthGuard>(QPMTXAuthGuard);
     reflector = module.get<Reflector>(Reflector);
   });
 
@@ -123,7 +123,7 @@ describe('AuthGuard', () => {
 
     it('should merge auth options with individual decorators', () => {
       const context = mockExecutionContext();
-      const authOptions: AuthGuardOptions = {
+      const authOptions: QPMTXAuthGuardOptions = {
         roles: ['user'],
         requireAll: true,
       };
@@ -142,16 +142,19 @@ describe('AuthGuard', () => {
   });
 
   describe('validateRoles', () => {
-    const user: AuthUser = {
+    const user: QPMTXAuthUser = {
       id: 'user-123',
       roles: ['admin'],
     };
 
     it('should return true when no roles are required', () => {
-      const options: AuthGuardOptions = {};
+      const options: QPMTXAuthGuardOptions = {};
       const result = (
         guard as unknown as {
-          validateRoles: (user: AuthUser, options: AuthGuardOptions) => boolean;
+          validateRoles: (
+            user: QPMTXAuthUser,
+            options: QPMTXAuthGuardOptions,
+          ) => boolean;
         }
       ).validateRoles(user, options);
 
@@ -159,12 +162,15 @@ describe('AuthGuard', () => {
     });
 
     it('should validate user roles correctly', () => {
-      const options: AuthGuardOptions = {
+      const options: QPMTXAuthGuardOptions = {
         roles: ['admin'],
       };
       const result = (
         guard as unknown as {
-          validateRoles: (user: AuthUser, options: AuthGuardOptions) => boolean;
+          validateRoles: (
+            user: QPMTXAuthUser,
+            options: QPMTXAuthGuardOptions,
+          ) => boolean;
         }
       ).validateRoles(user, options);
 
@@ -172,12 +178,15 @@ describe('AuthGuard', () => {
     });
 
     it('should handle role hierarchy', () => {
-      const options: AuthGuardOptions = {
+      const options: QPMTXAuthGuardOptions = {
         roles: ['user'], // admin should inherit user role
       };
       const result = (
         guard as unknown as {
-          validateRoles: (user: AuthUser, options: AuthGuardOptions) => boolean;
+          validateRoles: (
+            user: QPMTXAuthUser,
+            options: QPMTXAuthGuardOptions,
+          ) => boolean;
         }
       ).validateRoles(user, options);
 
@@ -185,17 +194,20 @@ describe('AuthGuard', () => {
     });
 
     it('should require all roles when requireAll is true', () => {
-      const userWithMultipleRoles: AuthUser = {
+      const userWithMultipleRoles: QPMTXAuthUser = {
         id: 'user-123',
         roles: ['admin', 'moderator'],
       };
-      const options: AuthGuardOptions = {
+      const options: QPMTXAuthGuardOptions = {
         roles: ['admin', 'moderator'],
         requireAll: true,
       };
       const result = (
         guard as unknown as {
-          validateRoles: (user: AuthUser, options: AuthGuardOptions) => boolean;
+          validateRoles: (
+            user: QPMTXAuthUser,
+            options: QPMTXAuthGuardOptions,
+          ) => boolean;
         }
       ).validateRoles(userWithMultipleRoles, options);
 
@@ -204,19 +216,19 @@ describe('AuthGuard', () => {
   });
 
   describe('validatePermissions', () => {
-    const user: AuthUser = {
+    const user: QPMTXAuthUser = {
       id: 'user-123',
       roles: ['user'],
       permissions: ['read:users', 'write:posts'],
     };
 
     it('should return true when no permissions are required', () => {
-      const options: AuthGuardOptions = {};
+      const options: QPMTXAuthGuardOptions = {};
       const result = (
         guard as unknown as {
           validatePermissions: (
-            user: AuthUser,
-            options: AuthGuardOptions,
+            user: QPMTXAuthUser,
+            options: QPMTXAuthGuardOptions,
           ) => boolean;
         }
       ).validatePermissions(user, options);
@@ -225,14 +237,14 @@ describe('AuthGuard', () => {
     });
 
     it('should validate user permissions correctly', () => {
-      const options: AuthGuardOptions = {
+      const options: QPMTXAuthGuardOptions = {
         permissions: ['read:users'],
       };
       const result = (
         guard as unknown as {
           validatePermissions: (
-            user: AuthUser,
-            options: AuthGuardOptions,
+            user: QPMTXAuthUser,
+            options: QPMTXAuthGuardOptions,
           ) => boolean;
         }
       ).validatePermissions(user, options);
@@ -241,18 +253,18 @@ describe('AuthGuard', () => {
     });
 
     it('should handle missing permissions', () => {
-      const userWithoutPermissions: AuthUser = {
+      const userWithoutPermissions: QPMTXAuthUser = {
         id: 'user-123',
         roles: ['user'],
       };
-      const options: AuthGuardOptions = {
+      const options: QPMTXAuthGuardOptions = {
         permissions: ['read:users'],
       };
       const result = (
         guard as unknown as {
           validatePermissions: (
-            user: AuthUser,
-            options: AuthGuardOptions,
+            user: QPMTXAuthUser,
+            options: QPMTXAuthGuardOptions,
           ) => boolean;
         }
       ).validatePermissions(userWithoutPermissions, options);

@@ -7,11 +7,15 @@ import { PUBLIC_KEY } from './metadata.constants';
  *
  * @example
  * ```typescript
- * @Public()
+ * @QPMTXPublic()
  * @Get('/health')
  * getHealth() {
  *   return { status: 'ok' };
  * }
  * ```
  */
-export const Public = () => SetMetadata(PUBLIC_KEY, true);
+export const QPMTXPublic = () => SetMetadata(PUBLIC_KEY, true);
+
+// Backward compatibility alias
+/** @deprecated Use QPMTXPublic instead */
+export const Public = QPMTXPublic;

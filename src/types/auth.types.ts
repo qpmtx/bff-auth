@@ -1,7 +1,7 @@
 /**
  * Represents an authenticated user in the system
  */
-export interface AuthUser {
+export interface QPMTXAuthUser {
   /** Unique user identifier */
   id: string;
   /** User's email address */
@@ -19,7 +19,7 @@ export interface AuthUser {
 /**
  * JWT token payload structure
  */
-export interface JwtPayload {
+export interface QPMTXJwtPayload {
   /** Subject (user ID) */
   sub: string;
   /** User's email address */
@@ -41,9 +41,9 @@ export interface JwtPayload {
 /**
  * Base request interface that works with both Express and Fastify
  */
-export interface BaseRequest {
+export interface QPMTXBaseRequest {
   /** Authenticated user object */
-  user?: AuthUser;
+  user?: QPMTXAuthUser;
   /** Request headers */
   headers: Record<string, string | string[] | undefined>;
   /** Request method */
@@ -61,25 +61,25 @@ export interface BaseRequest {
 /**
  * HTTP request with authenticated user - compatible with Express and Fastify
  */
-export interface AuthRequest extends BaseRequest {
+export interface QPMTXAuthRequest extends QPMTXBaseRequest {
   /** Authenticated user object */
-  user: AuthUser;
+  user: QPMTXAuthUser;
 }
 
 /** Type alias for role strings */
-export type Role = string;
+export type QPMTXRole = string;
 
 /** Type alias for permission strings */
-export type Permission = string;
+export type QPMTXPermission = string;
 
 /**
  * Definition of a role with its permissions
  */
-export interface RoleDefinition {
+export interface QPMTXRoleDefinition {
   /** Role name */
   name: string;
   /** Permissions granted by this role */
-  permissions: Permission[];
+  permissions: QPMTXPermission[];
   /** Optional role description */
   description?: string;
 }
@@ -87,9 +87,9 @@ export interface RoleDefinition {
 /**
  * Authentication context information
  */
-export interface AuthContext {
+export interface QPMTXAuthContext {
   /** Authenticated user */
-  user: AuthUser;
+  user: QPMTXAuthUser;
   /** HTTP request object */
   request: unknown;
   /** Request headers */
@@ -99,11 +99,11 @@ export interface AuthContext {
 /**
  * Result of token validation
  */
-export interface TokenValidationResult {
+export interface QPMTXTokenValidationResult {
   /** Whether the token is valid */
   isValid: boolean;
   /** User object if validation successful */
-  user?: AuthUser;
+  user?: QPMTXAuthUser;
   /** Error message if validation failed */
   error?: string;
 }
@@ -111,13 +111,35 @@ export interface TokenValidationResult {
 /**
  * Options for configuring authentication guards
  */
-export interface AuthGuardOptions {
+export interface QPMTXAuthGuardOptions {
   /** Required roles for access */
-  roles?: Role[];
+  roles?: QPMTXRole[];
   /** Required permissions for access */
-  permissions?: Permission[];
+  permissions?: QPMTXPermission[];
   /** Whether all roles/permissions are required (AND logic) */
   requireAll?: boolean;
   /** Whether to allow anonymous access */
   allowAnonymous?: boolean;
 }
+
+// Backward compatibility aliases
+/** @deprecated Use QPMTXAuthUser instead */
+export type AuthUser = QPMTXAuthUser;
+/** @deprecated Use QPMTXJwtPayload instead */
+export type JwtPayload = QPMTXJwtPayload;
+/** @deprecated Use QPMTXBaseRequest instead */
+export type BaseRequest = QPMTXBaseRequest;
+/** @deprecated Use QPMTXAuthRequest instead */
+export type AuthRequest = QPMTXAuthRequest;
+/** @deprecated Use QPMTXRole instead */
+export type Role = QPMTXRole;
+/** @deprecated Use QPMTXPermission instead */
+export type Permission = QPMTXPermission;
+/** @deprecated Use QPMTXRoleDefinition instead */
+export type RoleDefinition = QPMTXRoleDefinition;
+/** @deprecated Use QPMTXAuthContext instead */
+export type AuthContext = QPMTXAuthContext;
+/** @deprecated Use QPMTXTokenValidationResult instead */
+export type TokenValidationResult = QPMTXTokenValidationResult;
+/** @deprecated Use QPMTXAuthGuardOptions instead */
+export type AuthGuardOptions = QPMTXAuthGuardOptions;
