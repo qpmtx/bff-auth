@@ -26,13 +26,14 @@ export class QPMTXOAuthBaseStrategy {
         );
       } else {
         // Default user mapping
+        const profileData = profile;
         const user = {
-          id: String(profile.id),
-          provider: String(profile.provider),
-          username: profile.username ?? profile.displayName,
-          displayName: profile.displayName,
-          email: profile.emails?.[0]?.value,
-          photos: profile.photos,
+          id: String(profileData.id),
+          provider: String(profileData.provider),
+          username: profileData.username ?? profileData.displayName,
+          displayName: profileData.displayName,
+          email: profileData.emails?.[0]?.value,
+          photos: profileData.photos,
           accessToken,
           refreshToken,
           roles: this.config.defaultRoles ?? ['user'],

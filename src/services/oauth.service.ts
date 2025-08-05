@@ -53,10 +53,11 @@ export class QPMTXOAuthService {
     }
 
     // Default user mapping
+    const profileData = profile;
     const user: QPMTXAuthUser = {
-      id: String(profile.id),
-      email: profile.emails?.[0]?.value,
-      username: profile.username ?? profile.displayName,
+      id: String(profileData.id),
+      email: profileData.emails?.[0]?.value,
+      username: profileData.username ?? profileData.displayName,
       roles: this.config.defaultRoles ?? ['user'],
       permissions: [],
     };
@@ -84,10 +85,11 @@ export class QPMTXOAuthService {
    * Generate JWT token from OAuth profile (simplified)
    */
   generateJwtFromProfile(profile: Profile, provider: string): string {
+    const profileData = profile;
     const payload: QPMTXJwtPayload = {
-      sub: String(profile.id),
-      email: profile.emails?.[0]?.value,
-      username: profile.username ?? profile.displayName,
+      sub: String(profileData.id),
+      email: profileData.emails?.[0]?.value,
+      username: profileData.username ?? profileData.displayName,
       roles: this.config.defaultRoles ?? ['user'],
       permissions: [],
       provider,
