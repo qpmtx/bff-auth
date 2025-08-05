@@ -11,6 +11,7 @@ export default tseslint.config(
       'dist/**',
       'node_modules/**',
       'coverage/**',
+      'examples/**',
       // config files that often cause “file does not match your project config”
       'eslint.config.*',
       'jest.config.*',

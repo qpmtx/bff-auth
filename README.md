@@ -8,10 +8,14 @@ A comprehensive, type-safe authentication library for NestJS applications with c
 - 🛡️ **Configurable guards** that can be easily overridden
 - 👥 **Role-based access control (RBAC)** with hierarchical roles
 - 🔑 **Permission-based authorization**
+- 🌐 **OAuth services** - Injectable services for complete control (GitHub, Google, etc.)
+- 🚫 **No forced controllers** - You create your own routes and responses
+- 🔐 **Session management** for OAuth flows
 - ⚙️ **External configuration support**
 - 📦 **Peer dependencies** for optimal bundle size
 - 🎯 **Decorator-based authorization**
 - 🔄 **Async configuration support**
+- 📚 **Complete examples** - Ready-to-use implementation examples
 
 ## Installation
 
@@ -27,6 +31,10 @@ yarn add @qpmtx/nestjs-auth
 - `@nestjs/passport` - Passport integration
 - `passport` - Authentication middleware
 - `passport-jwt` - JWT passport strategy
+- `passport-github2` - GitHub OAuth strategy
+- `express-session` - Session management for OAuth
+- `@types/passport-github2` - TypeScript types for GitHub OAuth
+- `@types/express-session` - TypeScript types for sessions
 
 ## Quick Start
 
@@ -186,6 +194,216 @@ QPMTXAuthModule.forRoot({
 });
 ```
 
+## OAuth Integration
+
+### Basic OAuth Configuration
+
+```typescript
+import { QPMTXAuthModule } from '@qpmtx/nestjs-auth';
+
+@Module({
+  imports: [
+    QPMTXAuthModule.forRoot({
+      jwt: {
+        secret: 'your-secret-key',
+        signOptions: { expiresIn: '1h' },
+      },
+      oauth: {
+        github: {
+          clientID: process.env.GITHUB_CLIENT_ID,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          callbackURL: 'http://localhost:3000/auth/github/callback',
+          scope: ['user:email'],
+        },
+      },
+      session: {
+        secret: process.env.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+          secure: process.env.NODE_ENV === 'production',
+          httpOnly: true,
+          maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        },
+      },
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### OAuth Routes
+
+The library provides **services** instead of predefined routes, giving you complete control:
+
+- **No forced routes** - You decide your URL structure
+- **Injectable services** - Use `QPMTXOAuthService` and `QPMTXGitHubOAuthService`
+- **Complete examples** - See `examples/` folder for full implementations
+- **Your controllers** - Create routes that match your application
+
+### Custom OAuth User Mapping
+
+```typescript
+QPMTXAuthModule.forRoot({
+  // ... other config
+  oauthUserMapper: async (accessToken, refreshToken, profile, done) => {
+    try {
+      // Custom user creation/lookup logic
+      const user = await userService.findOrCreateOAuthUser({
+        provider: profile.provider,
+        providerId: profile.id,
+        email: profile.emails?.[0]?.value,
+        username: profile.username,
+        displayName: profile.displayName,
+        avatar: profile.photos?.[0]?.value,
+      });
+
+      // Add custom roles based on your logic
+      user.roles = await roleService.getUserRoles(user.id);
+
+      done(null, user);
+    } catch (error) {
+      done(error);
+    }
+  },
+});
+```
+
+### Using OAuth Services
+
+The library provides OAuth services that you can inject into your own controllers and services for maximum flexibility:
+
+```typescript
+import { Controller, Get, UseGuards, Req, Res } from '@nestjs/common';
+import {
+  QPMTXGitHubAuthGuard,
+  QPMTXOAuthService,
+  QPMTXGitHubOAuthService,
+  QPMTXOAuthRequest,
+} from '@qpmtx/nestjs-auth';
+
+@Controller('auth')
+export class AuthController {
+  constructor(
+    private readonly oauthService: QPMTXOAuthService,
+    private readonly githubOAuthService: QPMTXGitHubOAuthService,
+  ) {}
+
+  @Get('github')
+  @UseGuards(QPMTXGitHubAuthGuard)
+  githubAuth() {
+    // Guard redirects to GitHub
+    // Or manually redirect: res.redirect(this.githubOAuthService.getGitHubAuthUrl());
+  }
+
+  @Get('github/callback')
+  @UseGuards(QPMTXGitHubAuthGuard)
+  async githubAuthCallback(@Req() req: QPMTXOAuthRequest, @Res() res) {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: 'Authentication failed' });
+    }
+
+    try {
+      // Process OAuth user and generate JWT
+      const result = await this.githubOAuthService.processGitHubCallback(
+        user.accessToken,
+        user.refreshToken ?? '',
+        user as any,
+      );
+
+      // Customize response based on your needs
+      res.redirect(`/dashboard?token=${result.token}`);
+      
+      // Or return JSON:
+      // res.json({ access_token: result.token, user: result.user });
+    } catch (error) {
+      res.status(500).json({ message: 'OAuth processing failed' });
+    }
+  }
+
+  @Get('config/status')
+  getOAuthStatus() {
+    return {
+      github: {
+        configured: this.githubOAuthService.isGitHubConfigured(),
+        authUrl: this.githubOAuthService.isGitHubConfigured()
+          ? this.githubOAuthService.getGitHubAuthUrl()
+          : null,
+      },
+    };
+  }
+}
+```
+
+### OAuth Service Methods
+
+#### QPMTXOAuthService
+
+```typescript
+// Generate JWT from user data
+generateJwtFromUser(user: QPMTXAuthUser): string
+
+// Generate JWT from OAuth profile
+generateJwtFromProfile(profile: Profile, provider: string): string
+
+// Process OAuth user with custom mapping
+processOAuthUser(accessToken: string, refreshToken: string, profile: Profile): Promise<{user: QPMTXAuthUser, token: string}>
+
+// Get OAuth config for provider
+getOAuthConfig(provider: string): QPMTXOAuthProviderConfig | undefined
+
+// Check if OAuth is configured
+isOAuthConfigured(provider: string): boolean
+
+// Validate OAuth configuration
+validateOAuthConfig(provider: string): void
+```
+
+#### QPMTXGitHubOAuthService
+
+```typescript
+// Process GitHub OAuth callback
+processGitHubCallback(accessToken: string, refreshToken: string, profile: Profile): Promise<{user: QPMTXAuthUser, token: string}>
+
+// Get GitHub config
+getGitHubConfig(): QPMTXOAuthProviderConfig | undefined
+
+// Check if GitHub is configured
+isGitHubConfigured(): boolean
+
+// Get GitHub authorization URL
+getGitHubAuthUrl(): string
+
+// Validate GitHub configuration
+validateGitHubConfig(): void
+```
+
+### Multiple OAuth Providers
+
+```typescript
+QPMTXAuthModule.forRoot({
+  // ... JWT config
+  oauth: {
+    github: {
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL: 'http://localhost:3000/auth/github/callback',
+    },
+    google: {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: 'http://localhost:3000/auth/google/callback',
+      scope: ['email', 'profile'],
+    },
+    // Add more providers as needed
+  },
+  session: {
+    secret: process.env.SESSION_SECRET,
+  },
+});
+```
+
 ## API Reference
 
 ### Types
@@ -278,6 +496,19 @@ sanitizeUser(user, ['password', 'secret']);
 ```typescript
 interface QPMTXAuthModuleConfig {
   jwt?: QPMTXJwtConfig;
+  oauth?: QPMTXOAuthConfig;
+  oauthUserMapper?: QPMTXOAuthUserMapper;
+  session?: {
+    secret: string;
+    resave?: boolean;
+    saveUninitialized?: boolean;
+    cookie?: {
+      maxAge?: number;
+      secure?: boolean;
+      httpOnly?: boolean;
+      sameSite?: boolean | 'lax' | 'strict' | 'none';
+    };
+  };
   globalGuard?: boolean;
   defaultRoles?: string[];
   roleHierarchy?: Record<string, string[]>;
@@ -308,6 +539,31 @@ interface QPMTXJwtConfig {
     ignoreNotBefore?: boolean;
   };
 }
+```
+
+### OAuth Configuration
+
+```typescript
+interface QPMTXOAuthConfig {
+  github?: QPMTXOAuthProviderConfig;
+  google?: QPMTXOAuthProviderConfig;
+  [provider: string]: QPMTXOAuthProviderConfig | undefined;
+}
+
+interface QPMTXOAuthProviderConfig {
+  clientID: string;
+  clientSecret: string;
+  callbackURL: string;
+  scope?: string[];
+  [key: string]: unknown; // Additional provider-specific options
+}
+
+type QPMTXOAuthUserMapper = (
+  accessToken: string,
+  refreshToken: string,
+  profile: Profile,
+  done: (error: any, user?: any) => void,
+) => void | Promise<void>;
 ```
 
 ## Extending the Library
