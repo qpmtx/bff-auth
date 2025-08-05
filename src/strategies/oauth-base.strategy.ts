@@ -27,8 +27,8 @@ export class QPMTXOAuthBaseStrategy {
       } else {
         // Default user mapping
         const user = {
-          id: profile.id,
-          provider: profile.provider,
+          id: String(profile.id),
+          provider: String(profile.provider),
           username: profile.username ?? profile.displayName,
           displayName: profile.displayName,
           email: profile.emails?.[0]?.value,

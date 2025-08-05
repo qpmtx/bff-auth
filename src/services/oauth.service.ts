@@ -54,7 +54,7 @@ export class QPMTXOAuthService {
 
     // Default user mapping
     const user: QPMTXAuthUser = {
-      id: profile.id,
+      id: String(profile.id),
       email: profile.emails?.[0]?.value,
       username: profile.username ?? profile.displayName,
       roles: this.config.defaultRoles ?? ['user'],
@@ -85,7 +85,7 @@ export class QPMTXOAuthService {
    */
   generateJwtFromProfile(profile: Profile, provider: string): string {
     const payload: QPMTXJwtPayload = {
-      sub: profile.id,
+      sub: String(profile.id),
       email: profile.emails?.[0]?.value,
       username: profile.username ?? profile.displayName,
       roles: this.config.defaultRoles ?? ['user'],
