@@ -5,6 +5,7 @@ import type {
   Type,
 } from '@nestjs/common';
 import type { Algorithm } from 'jsonwebtoken';
+import type { Profile } from 'passport';
 
 /**
  * JWT configuration options for the authentication module
@@ -41,11 +42,67 @@ export interface QPMTXJwtConfig {
 }
 
 /**
+ * OAuth provider configuration
+ */
+export interface QPMTXOAuthProviderConfig {
+  /** OAuth client ID */
+  clientID: string;
+  /** OAuth client secret */
+  clientSecret: string;
+  /** OAuth callback URL */
+  callbackURL: string;
+  /** OAuth scopes to request */
+  scope?: string[];
+  /** Additional provider-specific options */
+  [key: string]: unknown;
+}
+
+/**
+ * OAuth configuration options for multiple providers
+ */
+export interface QPMTXOAuthConfig {
+  /** GitHub OAuth configuration */
+  github?: QPMTXOAuthProviderConfig;
+  /** Google OAuth configuration */
+  google?: QPMTXOAuthProviderConfig;
+  /** Additional OAuth providers can be added here */
+  [provider: string]: QPMTXOAuthProviderConfig | undefined;
+}
+
+/**
+ * OAuth user mapping function type
+ */
+export type QPMTXOAuthUserMapper = (
+  accessToken: string,
+  refreshToken: string,
+  profile: Profile,
+  done: (error: any, user?: any) => void,
+) => void | Promise<void>;
+
+/**
  * Main configuration interface for the authentication module
  */
 export interface QPMTXAuthModuleConfig {
   /** JWT configuration */
   jwt?: QPMTXJwtConfig;
+  /** OAuth configuration for multiple providers */
+  oauth?: QPMTXOAuthConfig;
+  /** OAuth user mapping function */
+  oauthUserMapper?: QPMTXOAuthUserMapper;
+  /** Session configuration for OAuth */
+  session?: {
+    /** Session secret */
+    secret: string;
+    /** Session options */
+    resave?: boolean;
+    saveUninitialized?: boolean;
+    cookie?: {
+      maxAge?: number;
+      secure?: boolean;
+      httpOnly?: boolean;
+      sameSite?: boolean | 'lax' | 'strict' | 'none';
+    };
+  };
   /** Whether to apply the auth guard globally */
   globalGuard?: boolean;
   /** Default roles assigned to users if none specified */

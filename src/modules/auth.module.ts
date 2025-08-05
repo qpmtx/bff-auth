@@ -1,20 +1,40 @@
-import { DynamicModule, Global, Module, Provider } from '@nestjs/common';
+import {
+  DynamicModule,
+  Global,
+  Inject,
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  Provider,
+  Type,
+} from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { authConfig } from '../config/auth.config';
 import { AUTH_MODULE_CONFIG } from '../constants';
+import { QPMTXGitHubOAuthService, QPMTXOAuthService } from '../services';
 import { QPMTXAuthGuard } from '../guards';
 import {
   QPMTXAuthConfigFactory,
   QPMTXAuthModuleAsyncConfig,
   QPMTXAuthModuleConfig,
 } from '../interfaces';
-import { QPMTXJwtStrategy } from '../strategies';
+import { QPMTXSessionMiddleware } from '../middleware';
+import { QPMTXGitHubStrategy, QPMTXJwtStrategy } from '../strategies';
 
 @Global()
 @Module({})
-export class QPMTXAuthModule {
+export class QPMTXAuthModule implements NestModule {
+  constructor(
+    @Inject(AUTH_MODULE_CONFIG) private readonly config: QPMTXAuthModuleConfig,
+  ) {}
+
+  configure(consumer: MiddlewareConsumer) {
+    // Session middleware is available but not auto-applied
+    // Users should apply it to their own OAuth routes as needed
+    // Example: consumer.apply(QPMTXSessionMiddleware).forRoutes('auth/*');
+  }
   static forRoot(config: QPMTXAuthModuleConfig): DynamicModule {
     const configProvider: Provider = {
       provide: AUTH_MODULE_CONFIG,
@@ -28,6 +48,45 @@ export class QPMTXAuthModule {
       inject: [AUTH_MODULE_CONFIG],
     };
 
+    const providers: Provider[] = [
+      configProvider,
+      jwtStrategyProvider,
+      QPMTXAuthGuard,
+    ];
+    const exports: Array<Type | string> = [
+      AUTH_MODULE_CONFIG,
+      JwtModule,
+      PassportModule,
+      QPMTXAuthGuard,
+      QPMTXJwtStrategy,
+    ];
+    const controllers: Type[] = [];
+
+    // Add OAuth services and strategies dynamically based on configuration
+    if (config.oauth) {
+      // Add OAuth services
+      providers.push(QPMTXOAuthService);
+      exports.push(QPMTXOAuthService);
+
+      // Add session middleware provider if session is configured
+      if (config.session) {
+        providers.push(QPMTXSessionMiddleware);
+        exports.push(QPMTXSessionMiddleware);
+      }
+
+      // Add GitHub strategy and service if configured
+      if (config.oauth.github) {
+        const githubStrategyProvider: Provider = {
+          provide: QPMTXGitHubStrategy,
+          useFactory: (cfg: QPMTXAuthModuleConfig) =>
+            new QPMTXGitHubStrategy(cfg),
+          inject: [AUTH_MODULE_CONFIG],
+        };
+        providers.push(githubStrategyProvider, QPMTXGitHubOAuthService);
+        exports.push(QPMTXGitHubStrategy, QPMTXGitHubOAuthService);
+      }
+    }
+
     return {
       module: QPMTXAuthModule,
       imports: [
@@ -38,14 +97,9 @@ export class QPMTXAuthModule {
           signOptions: config.jwt?.signOptions ?? {},
         }),
       ],
-      providers: [configProvider, jwtStrategyProvider, QPMTXAuthGuard],
-      exports: [
-        AUTH_MODULE_CONFIG,
-        JwtModule,
-        PassportModule,
-        QPMTXAuthGuard,
-        QPMTXJwtStrategy,
-      ],
+      controllers,
+      providers,
+      exports,
     };
   }
 
@@ -57,6 +111,38 @@ export class QPMTXAuthModule {
       useFactory: (cfg: QPMTXAuthModuleConfig) => new QPMTXJwtStrategy(cfg),
       inject: [AUTH_MODULE_CONFIG],
     };
+
+    const providers: Provider[] = [
+      ...asyncProviders,
+      jwtStrategyProvider,
+      QPMTXAuthGuard,
+    ];
+    const exports: Array<Type | string> = [
+      AUTH_MODULE_CONFIG,
+      JwtModule,
+      PassportModule,
+      QPMTXAuthGuard,
+      QPMTXJwtStrategy,
+    ];
+    const controllers: Type[] = [];
+
+    // Add OAuth services for async configuration
+    providers.push(QPMTXOAuthService);
+    exports.push(QPMTXOAuthService);
+
+    // OAuth strategies need to be added dynamically in async
+    const githubStrategyProvider: Provider = {
+      provide: QPMTXGitHubStrategy,
+      useFactory: (cfg: QPMTXAuthModuleConfig) => {
+        if (cfg.oauth?.github) {
+          return new QPMTXGitHubStrategy(cfg);
+        }
+        return null;
+      },
+      inject: [AUTH_MODULE_CONFIG],
+    };
+    providers.push(githubStrategyProvider, QPMTXGitHubOAuthService);
+    exports.push(QPMTXGitHubStrategy, QPMTXGitHubOAuthService);
 
     return {
       module: QPMTXAuthModule,
@@ -73,14 +159,9 @@ export class QPMTXAuthModule {
         }),
         ...(options.imports ?? []),
       ],
-      providers: [...asyncProviders, jwtStrategyProvider, QPMTXAuthGuard],
-      exports: [
-        AUTH_MODULE_CONFIG,
-        JwtModule,
-        PassportModule,
-        QPMTXAuthGuard,
-        QPMTXJwtStrategy,
-      ],
+      controllers,
+      providers,
+      exports,
     };
   }
 
