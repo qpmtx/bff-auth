@@ -86,7 +86,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: 🔍 Run ESLint check
-        run: pnpm run lint:check
+        run: pnpm run lint
 
   format:
     name: 💅 Check Code Formatting
