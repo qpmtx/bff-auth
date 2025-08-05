@@ -29,14 +29,17 @@ export class QPMTXOAuthService {
   }> {
     // Use custom user mapper if provided
     if (this.config.oauthUserMapper) {
-      return new Promise((resolve, reject) => {
-        this.config.oauthUserMapper!(
+      const oauthUserMapper = await new Promise<{
+        user: QPMTXAuthUser;
+        token: string;
+      }>((resolve, reject) => {
+        void this.config.oauthUserMapper!(
           accessToken,
           refreshToken,
           profile,
-          (error: unknown, user?: unknown) => {
+          (error: Error | null, user?: unknown) => {
             if (error) {
-              reject(error);
+              reject(error instanceof Error ? error : new Error(String(error)));
               return;
             }
 
@@ -46,6 +49,7 @@ export class QPMTXOAuthService {
           },
         );
       });
+      return oauthUserMapper;
     }
 
     // Default user mapping

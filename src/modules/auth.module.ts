@@ -30,18 +30,63 @@ export class QPMTXAuthModule implements NestModule {
     @Inject(AUTH_MODULE_CONFIG) private readonly config: QPMTXAuthModuleConfig,
   ) {}
 
-  configure(consumer: MiddlewareConsumer) {
+  configure(_consumer: MiddlewareConsumer) {
     // Session middleware is available but not auto-applied
     // Users should apply it to their own OAuth routes as needed
-    // Example: consumer.apply(QPMTXSessionMiddleware).forRoutes('auth/*');
+    // Example: _consumer.apply(QPMTXSessionMiddleware).forRoutes('auth/*');
   }
   static forRoot(config: QPMTXAuthModuleConfig): DynamicModule {
+    const { providers, exports: moduleExports } =
+      this.buildProvidersAndExports(config);
+
+    return {
+      module: QPMTXAuthModule,
+      imports: [
+        ConfigModule.forFeature(authConfig),
+        PassportModule.register({ defaultStrategy: 'jwt' }),
+        JwtModule.register({
+          secret: config.jwt?.secret,
+          signOptions: config.jwt?.signOptions ?? {},
+        }),
+      ],
+      controllers: [],
+      providers,
+      exports: moduleExports,
+    };
+  }
+
+  static forRootAsync(options: QPMTXAuthModuleAsyncConfig): DynamicModule {
+    const asyncProviders = this.createAsyncProviders(options);
+    const { providers: baseProviders, exports: baseExports } =
+      this.buildAsyncProvidersAndExports(asyncProviders);
+
+    return {
+      module: QPMTXAuthModule,
+      imports: [
+        ConfigModule.forFeature(authConfig),
+        PassportModule.register({ defaultStrategy: 'jwt' }),
+        JwtModule.registerAsync({
+          useFactory: (cfg: QPMTXAuthModuleConfig) => ({
+            secret: cfg.jwt?.secret,
+            signOptions: cfg.jwt?.signOptions ?? {},
+          }),
+          inject: [AUTH_MODULE_CONFIG],
+          ...(options.imports ? { imports: options.imports } : {}),
+        }),
+        ...(options.imports ?? []),
+      ],
+      controllers: [],
+      providers: baseProviders,
+      exports: baseExports,
+    };
+  }
+
+  private static buildProvidersAndExports(config: QPMTXAuthModuleConfig) {
     const configProvider: Provider = {
       provide: AUTH_MODULE_CONFIG,
       useValue: config,
     };
 
-    // Build QPMTXJwtStrategy with the injected config (no unresolved deps)
     const jwtStrategyProvider: Provider = {
       provide: QPMTXJwtStrategy,
       useFactory: (cfg: QPMTXAuthModuleConfig) => new QPMTXJwtStrategy(cfg),
@@ -60,52 +105,39 @@ export class QPMTXAuthModule implements NestModule {
       QPMTXAuthGuard,
       QPMTXJwtStrategy,
     ];
-    const controllers: Type[] = [];
 
-    // Add OAuth services and strategies dynamically based on configuration
-    if (config.oauth) {
-      // Add OAuth services
-      providers.push(QPMTXOAuthService);
-      exports.push(QPMTXOAuthService);
-
-      // Add session middleware provider if session is configured
-      if (config.session) {
-        providers.push(QPMTXSessionMiddleware);
-        exports.push(QPMTXSessionMiddleware);
-      }
-
-      // Add GitHub strategy and service if configured
-      if (config.oauth.github) {
-        const githubStrategyProvider: Provider = {
-          provide: QPMTXGitHubStrategy,
-          useFactory: (cfg: QPMTXAuthModuleConfig) =>
-            new QPMTXGitHubStrategy(cfg),
-          inject: [AUTH_MODULE_CONFIG],
-        };
-        providers.push(githubStrategyProvider, QPMTXGitHubOAuthService);
-        exports.push(QPMTXGitHubStrategy, QPMTXGitHubOAuthService);
-      }
-    }
-
-    return {
-      module: QPMTXAuthModule,
-      imports: [
-        ConfigModule.forFeature(authConfig),
-        PassportModule.register({ defaultStrategy: 'jwt' }),
-        JwtModule.register({
-          secret: config.jwt?.secret,
-          signOptions: config.jwt?.signOptions ?? {},
-        }),
-      ],
-      controllers,
-      providers,
-      exports,
-    };
+    this.addOAuthProviders(config, providers, exports);
+    return { providers, exports };
   }
 
-  static forRootAsync(options: QPMTXAuthModuleAsyncConfig): DynamicModule {
-    const asyncProviders = this.createAsyncProviders(options);
+  private static addOAuthProviders(
+    config: QPMTXAuthModuleConfig,
+    providers: Provider[],
+    exports: Array<Type | string>,
+  ) {
+    if (!config.oauth) return;
 
+    providers.push(QPMTXOAuthService);
+    exports.push(QPMTXOAuthService);
+
+    if (config.session) {
+      providers.push(QPMTXSessionMiddleware);
+      exports.push(QPMTXSessionMiddleware);
+    }
+
+    if (config.oauth.github) {
+      const githubStrategyProvider: Provider = {
+        provide: QPMTXGitHubStrategy,
+        useFactory: (cfg: QPMTXAuthModuleConfig) =>
+          new QPMTXGitHubStrategy(cfg),
+        inject: [AUTH_MODULE_CONFIG],
+      };
+      providers.push(githubStrategyProvider, QPMTXGitHubOAuthService);
+      exports.push(QPMTXGitHubStrategy, QPMTXGitHubOAuthService);
+    }
+  }
+
+  private static buildAsyncProvidersAndExports(asyncProviders: Provider[]) {
     const jwtStrategyProvider: Provider = {
       provide: QPMTXJwtStrategy,
       useFactory: (cfg: QPMTXAuthModuleConfig) => new QPMTXJwtStrategy(cfg),
@@ -124,13 +156,11 @@ export class QPMTXAuthModule implements NestModule {
       QPMTXAuthGuard,
       QPMTXJwtStrategy,
     ];
-    const controllers: Type[] = [];
 
     // Add OAuth services for async configuration
     providers.push(QPMTXOAuthService);
     exports.push(QPMTXOAuthService);
 
-    // OAuth strategies need to be added dynamically in async
     const githubStrategyProvider: Provider = {
       provide: QPMTXGitHubStrategy,
       useFactory: (cfg: QPMTXAuthModuleConfig) => {
@@ -144,25 +174,7 @@ export class QPMTXAuthModule implements NestModule {
     providers.push(githubStrategyProvider, QPMTXGitHubOAuthService);
     exports.push(QPMTXGitHubStrategy, QPMTXGitHubOAuthService);
 
-    return {
-      module: QPMTXAuthModule,
-      imports: [
-        ConfigModule.forFeature(authConfig),
-        PassportModule.register({ defaultStrategy: 'jwt' }),
-        JwtModule.registerAsync({
-          useFactory: (cfg: QPMTXAuthModuleConfig) => ({
-            secret: cfg.jwt?.secret,
-            signOptions: cfg.jwt?.signOptions ?? {},
-          }),
-          inject: [AUTH_MODULE_CONFIG],
-          ...(options.imports ? { imports: options.imports } : {}),
-        }),
-        ...(options.imports ?? []),
-      ],
-      controllers,
-      providers,
-      exports,
-    };
+    return { providers, exports };
   }
 
   private static createAsyncProviders(

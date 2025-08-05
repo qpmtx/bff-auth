@@ -16,14 +16,15 @@ export class QPMTXJwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   ) {
     if (!config.jwt?.secret) throw new Error('JWT secret is required');
 
+    const { verifyOptions } = config.jwt;
     super({
       jwtFromRequest:
         config.tokenExtractor ?? ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: config.jwt.secret,
-      ignoreExpiration: config.jwt?.verifyOptions?.ignoreExpiration ?? false,
-      issuer: config.jwt?.verifyOptions?.issuer,
-      audience: config.jwt?.verifyOptions?.audience,
-      algorithms: config.jwt?.verifyOptions?.algorithms,
+      ignoreExpiration: verifyOptions?.ignoreExpiration ?? false,
+      issuer: verifyOptions?.issuer,
+      audience: verifyOptions?.audience,
+      algorithms: verifyOptions?.algorithms,
     });
   }
 

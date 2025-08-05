@@ -2,7 +2,13 @@ import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import { QPMTXAuthGuard, QPMTXAuthModule, QPMTXUser, QPMTXOAuthService, QPMTXGitHubOAuthService } from '../src';
+import {
+  QPMTXAuthGuard,
+  QPMTXAuthModule,
+  QPMTXGitHubOAuthService,
+  QPMTXOAuthService,
+  QPMTXUser,
+} from '../src';
 
 // Mock controller to test OAuth integration
 @Controller('test')
@@ -111,7 +117,7 @@ describe('OAuth Flow Integration E2E', () => {
       // Users can access them in their own controllers
       const oauthService = app.get(QPMTXOAuthService);
       const githubService = app.get(QPMTXGitHubOAuthService);
-      
+
       expect(oauthService).toBeDefined();
       expect(githubService).toBeDefined();
     });
@@ -119,7 +125,7 @@ describe('OAuth Flow Integration E2E', () => {
     it('should generate OAuth URLs through services', () => {
       const githubService = app.get(QPMTXGitHubOAuthService);
       const authUrl = githubService.getGitHubAuthUrl();
-      
+
       expect(authUrl).toContain('github.com/login/oauth/authorize');
     });
   });

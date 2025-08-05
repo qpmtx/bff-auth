@@ -76,7 +76,7 @@ export type QPMTXOAuthUserMapper = (
   accessToken: string,
   refreshToken: string,
   profile: Profile,
-  done: (error: any, user?: any) => void,
+  done: (error: Error | null, user?: unknown) => void,
 ) => void | Promise<void>;
 
 /**
