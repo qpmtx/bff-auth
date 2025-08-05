@@ -1,6 +1,6 @@
 {
   "name": "@qpmtx/nestjs-auth",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Type-safe authentication library for NestJS with configurable guards and role-based access control",
   "author": {
     "name": "QPMatrix",
