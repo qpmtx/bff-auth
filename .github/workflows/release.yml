@@ -100,6 +100,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org
           always-auth: true
+          cache: pnpm
 
       - name: "📥 Install dependencies"
         run: pnpm install --no-frozen-lockfile
@@ -140,17 +141,13 @@ jobs:
       - name: "🏗️ Build package (post-bump)"
         run: pnpm build
 
-      - name: "🔑 Authenticate with npm"
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
-          echo "always-auth=true" >> ~/.npmrc
-          
       - name: "🔍 Verify npm authentication"
         run: |
           echo "Verifying npm authentication..."
           npm whoami
           echo "✅ NPM authentication successful"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: "📄 Generate changelog entry"
         id: changelog
@@ -179,7 +176,7 @@ jobs:
         id: create-tag
         run: |
           NEW_VERSION="${{ steps.bump-version.outputs.new }}"
-          TAG="qpmtx-bff-auth-v${NEW_VERSION}"
+          TAG="qpmtx-nestjs-auth-v${NEW_VERSION}"
           git tag -a "$TAG" -m "Release $TAG"
           echo "tag-name=$TAG" >> "$GITHUB_OUTPUT"
 
@@ -188,7 +185,7 @@ jobs:
 
       - name: "📦 Publish to npm"
         run: |
-          echo "Publishing @qpmtx/bff-auth@${{ steps.bump-version.outputs.new }} to npm..."
+          echo "Publishing @qpmtx/nestjs-auth@${{ steps.bump-version.outputs.new }} to npm..."
           npm publish --access public
           echo "✅ Package published successfully!"
         env:
@@ -198,7 +195,7 @@ jobs:
         run: |
           echo "Verifying package was published..."
           sleep 10  # Wait for npm registry to sync
-          npm view @qpmtx/bff-auth@${{ steps.bump-version.outputs.new }}
+          npm view @qpmtx/nestjs-auth@${{ steps.bump-version.outputs.new }}
           echo "✅ Package verification successful!"
 
       - name: "📋 Create GitHub Release"
@@ -214,18 +211,18 @@ jobs:
             ## 📥 Installation
             
             ```bash
-            npm install @qpmtx/bff-auth@${{ steps.bump-version.outputs.new }}
+            npm install @qpmtx/nestjs-auth@${{ steps.bump-version.outputs.new }}
             # or
-            pnpm add @qpmtx/bff-auth@${{ steps.bump-version.outputs.new }}
+            pnpm add @qpmtx/nestjs-auth@${{ steps.bump-version.outputs.new }}
             # or  
-            yarn add @qpmtx/bff-auth@${{ steps.bump-version.outputs.new }}
+            yarn add @qpmtx/nestjs-auth@${{ steps.bump-version.outputs.new }}
             ```
             
             ## 🔗 Links
             
-            - 📦 [NPM Package](https://www.npmjs.com/package/@qpmtx/bff-auth)
-            - 📚 [Documentation](https://github.com/qpmtx/bff-auth#readme)
-            - 🐛 [Report Issues](https://github.com/qpmtx/bff-auth/issues)
+            - 📦 [NPM Package](https://www.npmjs.com/package/@qpmtx/nestjs-auth)
+            - 📚 [Documentation](https://github.com/qpmtx/nestjs-auth#readme)
+            - 🐛 [Report Issues](https://github.com/qpmtx/nestjs-auth/issues)
           draft: false
           prerelease: false
         env:
@@ -234,6 +231,6 @@ jobs:
       - name: "📊 Summary"
         run: |
           echo "### ✅ Released v${{ steps.bump-version.outputs.new }} to npm" >> "$GITHUB_STEP_SUMMARY"
-          echo "🔗 **Package**: https://www.npmjs.com/package/@qpmtx/bff-auth" >> "$GITHUB_STEP_SUMMARY"
+          echo "🔗 **Package**: https://www.npmjs.com/package/@qpmtx/nestjs-auth" >> "$GITHUB_STEP_SUMMARY"
           echo "📦 **Version**: v${{ steps.bump-version.outputs.new }}" >> "$GITHUB_STEP_SUMMARY"
           echo "🏷️ **Tag**: ${{ steps.create-tag.outputs.tag-name }}" >> "$GITHUB_STEP_SUMMARY"
